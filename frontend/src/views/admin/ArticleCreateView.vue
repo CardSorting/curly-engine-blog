@@ -11,199 +11,277 @@
         <!-- Title -->
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700">
-            Title *
+        Title *
           </label>
           <Input
-            id="title"
-            v-model="form.title"
-            type="text"
-            placeholder="Enter article title"
-            :error-message="errors.title"
-            required
-            full-width
-            class="mt-1"
+        id="title"
+        v-model="form.title"
+        type="text"
+        placeholder="Enter article title"
+        :error-message="errors.title"
+        required
+        full-width
+        class="mt-1"
           />
         </div>
 
         <!-- Slug -->
         <div>
           <label for="slug" class="block text-sm font-medium text-gray-700">
-            URL Slug
+        URL Slug
           </label>
           <Input
-            id="slug"
-            v-model="form.slug"
-            type="text"
-            placeholder="article-url-slug"
-            :error-message="errors.slug"
-            full-width
-            class="mt-1"
+        id="slug"
+        v-model="form.slug"
+        type="text"
+        placeholder="article-url-slug"
+        :error-message="errors.slug"
+        full-width
+        class="mt-1"
           />
           <p class="mt-1 text-sm text-gray-500">
-            Leave empty to generate automatically from title
+        Leave empty to generate automatically from title
           </p>
         </div>
 
         <!-- Excerpt -->
         <div>
           <label for="excerpt" class="block text-sm font-medium text-gray-700">
-            Excerpt
+        Excerpt
           </label>
           <Input
-            id="excerpt"
-            v-model="form.excerpt"
-            type="text"
-            placeholder="Brief description of the article"
-            :error-message="errors.excerpt"
-            multiline
-            :rows="3"
-            full-width
-            class="mt-1"
+        id="excerpt"
+        v-model="form.excerpt"
+        type="text"
+        placeholder="Brief description of the article"
+        :error-message="errors.excerpt"
+        multiline
+        :rows="3"
+        full-width
+        class="mt-1"
           />
           <p class="mt-1 text-sm text-gray-500">
-            Short summary displayed in article listings (optional)
+        Short summary displayed in article listings (optional)
           </p>
         </div>
 
         <!-- Content -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
-            Content *
+        Content *
           </label>
           <MarkdownEditor
-            v-model="form.content"
-            placeholder="Write your article content in markdown..."
+        v-model="form.content"
+        placeholder="Write your article content in markdown..."
           />
           <p v-if="errors.content" class="mt-1 text-sm text-red-600">
-            {{ errors.content }}
+        {{ errors.content }}
           </p>
         </div>
 
         <!-- Topic -->
         <div>
           <label for="topic" class="block text-sm font-medium text-gray-700">
-            Topic
+        Topic
           </label>
           <select
-            id="topic"
-            v-model="form.topic_id"
-            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+        id="topic"
+        v-model="form.topic_id"
+        class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
           >
-            <option value="">Select a topic</option>
-            <option v-for="topic in topics" :key="topic.id" :value="topic.id">
-              {{ topic.name }}
-            </option>
+        <option value="">Select a topic</option>
+        <option v-for="topic in topics" :key="topic.id" :value="topic.id">
+          {{ topic.name }}
+        </option>
           </select>
         </div>
 
         <!-- Tags -->
         <div>
           <label for="tags" class="block text-sm font-medium text-gray-700">
-            Tags
+        Tags
           </label>
           <Input
-            id="tags"
-            v-model="tagsInput"
-            type="text"
-            placeholder="tag1, tag2, tag3"
-            :error-message="errors.tags"
-            full-width
-            class="mt-1"
+        id="tags"
+        v-model="tagsInput"
+        type="text"
+        placeholder="tag1, tag2, tag3"
+        :error-message="errors.tags"
+        full-width
+        class="mt-1"
           />
           <p class="mt-1 text-sm text-gray-500">
-            Comma-separated tags
+        Comma-separated tags
           </p>
         </div>
 
         <!-- Featured Image -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">
-            Featured Image
+        Featured Image
           </label>
           <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
-            <div v-if="!form.featured_image" class="text-center">
-              <PhotoIcon class="mx-auto h-12 w-12 text-gray-400" />
-              <p class="mt-2 text-sm text-gray-600">
-                Click to upload or drag and drop
-              </p>
-              <p class="text-xs text-gray-500">
-                PNG, JPG, GIF up to 10MB
-              </p>
-            </div>
-            <div v-else class="flex items-center space-x-4">
-              <img
-                :src="form.featured_image"
-                alt="Featured image preview"
-                class="h-20 w-20 object-cover rounded"
-              />
-              <div>
-                <p class="text-sm font-medium text-gray-900">Featured image</p>
-                <button
-                  type="button"
-                  @click="form.featured_image = ''"
-                  class="text-sm text-red-600 hover:text-red-800"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              class="hidden"
-              @change="handleImageUpload"
-            />
+        <div v-if="!form.featured_image" class="text-center">
+          <PhotoIcon class="mx-auto h-12 w-12 text-gray-400" />
+          <p class="mt-2 text-sm text-gray-600">
+            Click to upload or drag and drop
+          </p>
+          <p class="text-xs text-gray-500">
+            PNG, JPG, GIF up to 10MB
+          </p>
+        </div>
+        <div v-else class="flex items-center space-x-4">
+          <img
+            :src="form.featured_image"
+            alt="Featured image preview"
+            class="h-20 w-20 object-cover rounded"
+          />
+          <div>
+            <p class="text-sm font-medium text-gray-900">Featured image</p>
+            <button
+              type="button"
+              @click="form.featured_image = ''"
+              class="text-sm text-red-600 hover:text-red-800"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+        <input
+          type="file"
+          accept="image/*"
+          class="hidden"
+          @change="handleImageUpload"
+        />
+          </div>
+        </div>
+
+        <!-- Social Media Options -->
+        <div class="border-t pt-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media</h3>
+          
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
+          <input
+            type="text"
+            v-model="form.social_meta.og_title"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Leave empty to use article title"
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Title</label>
+          <input
+            type="text"
+            v-model="form.social_meta.twitter_title"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Leave empty to use article title"
+          />
+        </div>
+        
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Description</label>
+          <textarea
+            v-model="form.social_meta.og_description"
+            rows="2"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Leave empty to use article excerpt"
+          />
+        </div>
+        
+        <div class="sm:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Description</label>
+          <textarea
+            v-model="form.social_meta.twitter_description"
+            rows="2"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Leave empty to use article excerpt"
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Image</label>
+          <input
+            type="url"
+            v-model="form.social_meta.og_image"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Leave empty to use featured image"
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Image</label>
+          <input
+            type="url"
+            v-model="form.social_meta.twitter_image"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            placeholder="Leave empty to use featured image"
+          />
+        </div>
           </div>
         </div>
 
         <!-- Publishing Options -->
         <div class="border-t pt-6">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  v-model="form.is_featured"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span class="ml-2 text-sm text-gray-700">Featured article</span>
-              </label>
-              
-              <label class="flex items-center">
-                <input
-                  type="checkbox"
-                  v-model="form.allow_comments"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span class="ml-2 text-sm text-gray-700">Allow comments</span>
-              </label>
-            </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Publish Date</label>
+          <input
+            type="datetime-local"
+            v-model="form.publish_date"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          />
+          <p class="mt-1 text-sm text-gray-500">Leave empty to publish immediately</p>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+          <label class="flex items-center">
+            <input
+              type="checkbox"
+              v-model="form.is_featured"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span class="ml-2 text-sm text-gray-700">Featured article</span>
+          </label>
+          
+          <label class="flex items-center">
+            <input
+              type="checkbox"
+              v-model="form.allow_comments"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span class="ml-2 text-sm text-gray-700">Allow comments</span>
+          </label>
+        </div>
+          </div>
 
-            <div class="flex items-center space-x-3">
-              <router-link
-                :to="{ name: 'admin-articles' }"
-                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Cancel
-              </router-link>
-              
-              <button
-                type="button"
-                @click="saveDraft"
-                :disabled="saving"
-                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Save Draft
-              </button>
-              
-              <button
-                type="submit"
-                :disabled="saving || !form.title || !form.content"
-                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {{ saving ? 'Publishing...' : 'Publish' }}
-              </button>
-            </div>
+          <div class="flex items-center justify-between mt-4">
+          <router-link
+            :to="{ name: 'admin-articles' }"
+            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Cancel
+          </router-link>
+          
+          <button
+            type="button"
+            @click="saveDraft"
+            :disabled="saving"
+            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Save Draft
+          </button>
+          
+          <button
+            type="submit"
+            :disabled="saving || !form.title || !form.content"
+            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {{ saving ? 'Publishing...' : 'Publish' }}
+          </button>
+        </div>
           </div>
         </div>
       </form>
@@ -241,7 +319,17 @@ const form = ref({
   featured_image: '',
   is_featured: false,
   allow_comments: true,
-  status: 'published' as 'draft' | 'published'
+  status: 'published' as 'draft' | 'published',
+  publish_date: '',
+  social_meta: {
+    og_title: '',
+    og_description: '',
+    og_image: '',
+    twitter_card: 'summary_large_image',
+    twitter_title: '',
+    twitter_description: '',
+    twitter_image: ''
+  }
 })
 
 const errors = ref<Record<string, string>>({})
@@ -325,7 +413,9 @@ const saveArticle = async () => {
     
     const articleData = {
       ...form.value,
-      published_at: form.value.status === 'published' ? new Date().toISOString() : null
+      published_at: form.value.status === 'published' 
+        ? (form.value.publish_date ? new Date(form.value.publish_date).toISOString() : new Date().toISOString())
+        : null
     }
     
     const response = await createArticle(articleData)

@@ -117,12 +117,9 @@
         />
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Content</label>
-          <textarea
+          <MarkdownEditor
             v-model="form.content"
-            rows="8"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            placeholder="Page content in HTML or plain text"
-            required
+            placeholder="Write your page content in markdown..."
           />
         </div>
         <Input
@@ -176,12 +173,9 @@
         />
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Content</label>
-          <textarea
+          <MarkdownEditor
             v-model="form.content"
-            rows="8"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            placeholder="Page content in HTML or plain text"
-            required
+            placeholder="Write your page content in markdown..."
           />
         </div>
         <Input
@@ -253,6 +247,7 @@ import { type Page } from '@/types/api'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Modal from '../../components/ui/Modal.vue'
+import MarkdownEditor from '@/components/editor/MarkdownEditor.vue'
 import { useNotification } from '@kyvg/vue3-notification'
 
 const { fetchPages, createPage, updatePage, deletePage } = usePages()

@@ -25,7 +25,9 @@ const SettingsView = () => import('@/views/admin/SettingsView.vue')
 // Placeholder components for routes not yet implemented
 const TopicsView = () => import('@/views/admin/TopicsView.vue')
 const PagesView = () => import('@/views/admin/PagesView.vue')
+const SeoView = () => import('@/views/admin/SeoView.vue')
 const AnalyticsView = () => import('@/views/admin/AnalyticsView.vue')
+const NewsletterView = () => import('@/views/admin/NewsletterView.vue')
 
 // Route guards
 const requireAuth = (to: any, from: any, next: any) => {
@@ -196,10 +198,24 @@ const routes: RouteRecordRaw[] = [
     beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
   },
   {
+    path: '/:accountSlug/admin/seo',
+    name: 'admin-seo',
+    component: SeoView,
+    meta: { requiresAuth: true, requiresTenant: true, layout: 'admin', title: 'SEO' },
+    beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
+  },
+  {
     path: '/:accountSlug/admin/analytics',
     name: 'admin-analytics',
     component: AnalyticsView,
     meta: { requiresAuth: true, requiresTenant: true, layout: 'admin', title: 'Analytics' },
+    beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
+  },
+  {
+    path: '/:accountSlug/admin/newsletter',
+    name: 'admin-newsletter',
+    component: NewsletterView,
+    meta: { requiresAuth: true, requiresTenant: true, layout: 'admin', title: 'Newsletter' },
     beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
   },
 

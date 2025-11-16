@@ -2,17 +2,12 @@
   <AdminLayout>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Edit Article</h1>
-        <p class="mt-2 text-gray-600">Edit and update your blog post</p>
-      </div>
-
-      <!-- Loading State -->
-      <div v-if="loading" class="flex justify-center items-center h-64">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <h1 class="text-2xl font-bold text-gray-900">Create Article</h1>
+        <p class="mt-2 text-gray-600">Write and publish a new blog post</p>
       </div>
 
       <!-- Article Form -->
-      <form v-if="!loading" @submit.prevent="saveArticle" class="space-y-6">
+      <form @submit.prevent="saveArticle" class="space-y-6">
         <!-- Title -->
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700">
@@ -284,9 +279,10 @@
                 :disabled="saving || !form.title || !form.content"
                 class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                {{ saving ? 'Updating...' : 'Update' }}
+                {{ saving ? 'Publishing...' : 'Publish' }}
               </button>
             </div>
+          </div>
         </div>
       </form>
     </div>
@@ -295,26 +291,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import MarkdownEditor from '@/components/editor/MarkdownEditor.vue'
 import { PhotoIcon } from '@heroicons/vue/24/outline'
 import { useArticles, useTopics } from '@/composables/useApi'
-import { type Topic, type Article } from '@/types/api'
+import { type Topic } from '@/types/api'
 import Input from '@/components/ui/Input.vue'
 import { useNotification } from '@kyvg/vue3-notification'
 
-const route = useRoute()
 const router = useRouter()
-const { fetchArticle, updateArticle } = useArticles()
+const { createArticle } = useArticles()
 const { fetchTopics } = useTopics()
 const { notify } = useNotification()
 
-const loading = ref(true)
 const saving = ref(false)
 const topics = ref<Topic[]>([])
 const tagsInput = ref('')
-const articleSlug = route.params.slug as string
 
 const form = ref({
   title: '',
@@ -342,54 +335,8 @@ const form = ref({
 const errors = ref<Record<string, string>>({})
 
 onMounted(async () => {
-  await Promise.all([
-    loadArticle(),
-    loadTopics()
-  ])
+  await loadTopics()
 })
-
-const loadArticle = async () => {
-  try {
-    const article = await fetchArticle(articleSlug)
-    if (article) {
-      form.value = {
-        title: article.title || '',
-        slug: article.slug || '',
-        excerpt: article.excerpt || '',
-        content: article.content || '',
-        topic_id: article.topic?.id || '',
-        tags: article.tags || [],
-        featured_image: article.featured_image || '',
-        is_featured: article.is_featured || false,
-        allow_comments: article.allow_comments !== false,
-        status: article.status || 'draft',
-        publish_date: article.published_at ? new Date(article.published_at).toISOString().slice(0, 16) : '',
-        social_meta: article.social_meta || {
-          og_title: '',
-          og_description: '',
-          og_image: '',
-          twitter_card: 'summary_large_image',
-          twitter_title: '',
-          twitter_description: '',
-          twitter_image: ''
-        }
-      }
-      
-      // Convert tags array to comma-separated string
-      tagsInput.value = form.value.tags.join(', ')
-    }
-  } catch (error) {
-    console.error('Failed to load article:', error)
-    notify({
-      title: 'Error',
-      text: 'Failed to load article',
-      type: 'error'
-    })
-    router.push({ name: 'admin-articles' })
-  } finally {
-    loading.value = false
-  }
-}
 
 const loadTopics = async () => {
   try {
@@ -471,23 +418,23 @@ const saveArticle = async () => {
         : null
     }
     
-    const response = await updateArticle(articleSlug, articleData)
+    const response = await createArticle(articleData)
     
     if (response) {
       notify({
         title: 'Success',
-        text: form.value.status === 'published' ? 'Article updated and published!' : 'Draft updated successfully!',
+        text: form.value.status === 'published' ? 'Article published successfully!' : 'Draft saved successfully!',
         type: 'success'
       })
       
       router.push({ name: 'admin-articles' })
     }
   } catch (error: any) {
-    console.error('Failed to update article:', error)
+    console.error('Failed to save article:', error)
     
     notify({
       title: 'Error',
-      text: error.message || 'Failed to update article',
+      text: error.message || 'Failed to save article',
       type: 'error'
     })
   } finally {

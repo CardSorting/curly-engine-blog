@@ -1,23 +1,31 @@
-<template>
-  <AdminLayout>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">Edit Article</h1>
-        <p class="mt-2 text-gray-600">Edit and update your blog post</p>
-      </div>
+<template
+>
+  <AdminLayout
+>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+>
+      <div class="mb-8"
+>
+        <h1 class="text-2xl font-bold text-gray-900">Create Article</h1
+>
+        <p class="mt-2 text-gray-600">Write and publish a new blog post</p
+>
+      </div
+>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex justify-center items-center h-64">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-
-      <!-- Article Form -->
-      <form v-if="!loading" @submit.prevent="saveArticle" class="space-y-6">
-        <!-- Title -->
-        <div>
-          <label for="title" class="block text-sm font-medium text-gray-700">
+      <!-- Article Form --
+>
+      <form @submit.prevent="saveArticle" class="space-y-6"
+>
+        <!-- Title --
+>
+        <div
+>
+          <label for="title" class="block text-sm font-medium text-gray-700"
+>
             Title *
-          </label>
+          </label
+>
           <Input
             id="title"
             v-model="form.title"
@@ -27,14 +35,20 @@
             required
             full-width
             class="mt-1"
-          />
-        </div>
+          /
+>
+        </div
+>
 
-        <!-- Slug -->
-        <div>
-          <label for="slug" class="block text-sm font-medium text-gray-700">
+        <!-- Slug --
+>
+        <div
+>
+          <label for="slug" class="block text-sm font-medium text-gray-700"
+>
             URL Slug
-          </label>
+          </label
+>
           <Input
             id="slug"
             v-model="form.slug"
@@ -43,17 +57,25 @@
             :error-message="errors.slug"
             full-width
             class="mt-1"
-          />
-          <p class="mt-1 text-sm text-gray-500">
+          /
+>
+          <p class="mt-1 text-sm text-gray-500"
+>
             Leave empty to generate automatically from title
-          </p>
-        </div>
+          </p
+>
+        </div
+>
 
-        <!-- Excerpt -->
-        <div>
-          <label for="excerpt" class="block text-sm font-medium text-gray-700">
+        <!-- Excerpt --
+>
+        <div
+>
+          <label for="excerpt" class="block text-sm font-medium text-gray-700"
+>
             Excerpt
-          </label>
+          </label
+>
           <Input
             id="excerpt"
             v-model="form.excerpt"
@@ -64,48 +86,74 @@
             :rows="3"
             full-width
             class="mt-1"
-          />
-          <p class="mt-1 text-sm text-gray-500">
+          /
+>
+          <p class="mt-1 text-sm text-gray-500"
+>
             Short summary displayed in article listings (optional)
-          </p>
-        </div>
+          </p
+>
+        </div
+>
 
-        <!-- Content -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+        <!-- Content --
+>
+        <div
+>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+>
             Content *
-          </label>
+          </label
+>
           <MarkdownEditor
             v-model="form.content"
             placeholder="Write your article content in markdown..."
-          />
-          <p v-if="errors.content" class="mt-1 text-sm text-red-600">
+          /
+>
+          <p v-if="errors.content" class="mt-1 text-sm text-red-600"
+>
             {{ errors.content }}
-          </p>
-        </div>
+          </p
+>
+        </div
+>
 
-        <!-- Topic -->
-        <div>
-          <label for="topic" class="block text-sm font-medium text-gray-700">
+        <!-- Topic --
+>
+        <div
+>
+          <label for="topic" class="block text-sm font-medium text-gray-700"
+>
             Topic
-          </label>
+          </label
+>
           <select
             id="topic"
             v-model="form.topic_id"
             class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-          >
-            <option value="">Select a topic</option>
-            <option v-for="topic in topics" :key="topic.id" :value="topic.id">
+          
+>
+            <option value="">Select a topic</option
+>
+            <option v-for="topic in topics" :key="topic.id" :value="topic.id"
+>
               {{ topic.name }}
-            </option>
-          </select>
-        </div>
+            </option
+>
+          </select
+>
+        </div
+>
 
-        <!-- Tags -->
-        <div>
-          <label for="tags" class="block text-sm font-medium text-gray-700">
+        <!-- Tags --
+>
+        <div
+>
+          <label for="tags" class="block text-sm font-medium text-gray-700"
+>
             Tags
-          </label>
+          </label
+>
           <Input
             id="tags"
             v-model="tagsInput"
@@ -114,207 +162,296 @@
             :error-message="errors.tags"
             full-width
             class="mt-1"
-          />
-          <p class="mt-1 text-sm text-gray-500">
+          /
+>
+          <p class="mt-1 text-sm text-gray-500"
+>
             Comma-separated tags
-          </p>
-        </div>
+          </p
+>
+        </div
+>
 
-        <!-- Featured Image -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+        <!-- Featured Image --
+>
+        <div
+>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+>
             Featured Image
-          </label>
-          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
-            <div v-if="!form.featured_image" class="text-center">
-              <PhotoIcon class="mx-auto h-12 w-12 text-gray-400" />
-              <p class="mt-2 text-sm text-gray-600">
+          </label
+>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6"
+>
+            <div v-if="!form.featured_image" class="text-center"
+>
+              <PhotoIcon class="mx-auto h-12 w-12 text-gray-400" /
+>
+              <p class="mt-2 text-sm text-gray-600"
+>
                 Click to upload or drag and drop
-              </p>
-              <p class="text-xs text-gray-500">
+              </p
+>
+              <p class="text-xs text-gray-500"
+>
                 PNG, JPG, GIF up to 10MB
-              </p>
-            </div>
-            <div v-else class="flex items-center space-x-4">
+              </p
+>
+            </div
+>
+            <div v-else class="flex items-center space-x-4"
+>
               <img
                 :src="form.featured_image"
                 alt="Featured image preview"
                 class="h-20 w-20 object-cover rounded"
-              />
-              <div>
-                <p class="text-sm font-medium text-gray-900">Featured image</p>
+              /
+>
+              <div
+>
+                <p class="text-sm font-medium text-gray-900">Featured image</p
+>
                 <button
                   type="button"
                   @click="form.featured_image = ''"
                   class="text-sm text-red-600 hover:text-red-800"
-                >
+                
+>
                   Remove
-                </button>
-              </div>
-            </div>
+                </button
+>
+              </div
+>
+            </div
+>
             <input
               type="file"
               accept="image/*"
               class="hidden"
               @change="handleImageUpload"
-            />
-          </div>
-        </div>
+            /
+>
+          </div
+>
+        </div
+>
 
-        <!-- Social Media Options -->
-        <div class="border-t pt-6">
-          <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media</h3>
+        <!-- Social Media Options --
+>
+        <div class="border-t pt-6"
+>
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media</h3
+>
           
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2"
+>
+            <div
+>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Title</label
+>
               <input
                 type="text"
                 v-model="form.social_meta.og_title"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Leave empty to use article title"
-              />
-            </div>
+              /
+>
+            </div
+>
             
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Title</label>
+            <div
+>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Title</label
+>
               <input
                 type="text"
                 v-model="form.social_meta.twitter_title"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Leave empty to use article title"
-              />
-            </div>
+              /
+>
+            </div
+>
             
-            <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Description</label>
+            <div class="sm:col-span-2"
+>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Description</label
+>
               <textarea
                 v-model="form.social_meta.og_description"
                 rows="2"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Leave empty to use article excerpt"
-              />
-            </div>
+              /
+>
+            </div
+>
             
-            <div class="sm:col-span-2">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Description</label>
+            <div class="sm:col-span-2"
+>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Description</label
+>
               <textarea
                 v-model="form.social_meta.twitter_description"
                 rows="2"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Leave empty to use article excerpt"
-              />
-            </div>
+              /
+>
+            </div
+>
             
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Image</label>
+            <div
+>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Open Graph Image</label
+>
               <input
                 type="url"
                 v-model="form.social_meta.og_image"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Leave empty to use featured image"
-              />
-            </div>
+              /
+>
+            </div
+>
             
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Image</label>
+            <div
+>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Twitter Image</label
+>
               <input
                 type="url"
                 v-model="form.social_meta.twitter_image"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Leave empty to use featured image"
-              />
-            </div>
-          </div>
-        </div>
+              /
+>
+            </div
+>
+          </div
+>
+        </div
+>
 
-        <!-- Publishing Options -->
-        <div class="border-t pt-6">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Publish Date</label>
+        <!-- Publishing Options --
+>
+        <div class="border-t pt-6"
+>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2"
+>
+            <div
+>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Publish Date</label
+>
               <input
                 type="datetime-local"
                 v-model="form.publish_date"
                 class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              />
-              <p class="mt-1 text-sm text-gray-500">Leave empty to publish immediately</p>
-            </div>
+              /
+>
+              <p class="mt-1 text-sm text-gray-500">Leave empty to publish immediately</p
+>
+            </div
+>
             
-            <div class="flex items-center space-x-4">
-              <label class="flex items-center">
+            <div class="flex items-center space-x-4"
+>
+              <label class="flex items-center"
+>
                 <input
                   type="checkbox"
                   v-model="form.is_featured"
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span class="ml-2 text-sm text-gray-700">Featured article</span>
-              </label>
+                /
+>
+                <span class="ml-2 text-sm text-gray-700">Featured article</span
+>
+              </label
+>
               
-              <label class="flex items-center">
+              <label class="flex items-center"
+>
                 <input
                   type="checkbox"
                   v-model="form.allow_comments"
                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span class="ml-2 text-sm text-gray-700">Allow comments</span>
-              </label>
-            </div>
-          </div>
+                /
+>
+                <span class="ml-2 text-sm text-gray-700">Allow comments</span
+>
+              </label
+>
+            </div
+>
+          </div
+>
 
-          <div class="flex items-center justify-between mt-4">
+          <div class="flex items-center justify-between mt-4"
+>
               <router-link
                 :to="{ name: 'admin-articles' }"
                 class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
+              
+>
                 Cancel
-              </router-link>
+              </router-link
+>
               
               <button
                 type="button"
                 @click="saveDraft"
                 :disabled="saving"
                 class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
+              
+>
                 Save Draft
-              </button>
+              </button
+>
               
               <button
                 type="submit"
                 :disabled="saving || !form.title || !form.content"
                 class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-              >
-                {{ saving ? 'Updating...' : 'Update' }}
-              </button>
-            </div>
-        </div>
-      </form>
-    </div>
-  </AdminLayout>
-</template>
+              
+>
+                {{ saving ? 'Publishing...' : 'Publish' }}
+              </button
+>
+            </div
+>
+          </div
+>
+        </div
+>
+      </form
+>
+    </div
+>
+  </AdminLayout
+>
+</template
+>
 
-<script setup lang="ts">
+<script setup lang="ts"
+>
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import MarkdownEditor from '@/components/editor/MarkdownEditor.vue'
 import { PhotoIcon } from '@heroicons/vue/24/outline'
 import { useArticles, useTopics } from '@/composables/useApi'
-import { type Topic, type Article } from '@/types/api'
+import { type Topic } from '@/types/api'
 import Input from '@/components/ui/Input.vue'
 import { useNotification } from '@kyvg/vue3-notification'
 
-const route = useRoute()
 const router = useRouter()
-const { fetchArticle, updateArticle } = useArticles()
+const { createArticle } = useArticles()
 const { fetchTopics } = useTopics()
 const { notify } = useNotification()
 
-const loading = ref(true)
 const saving = ref(false)
 const topics = ref<Topic[]>([])
 const tagsInput = ref('')
-const articleSlug = route.params.slug as string
 
 const form = ref({
   title: '',
@@ -342,54 +479,8 @@ const form = ref({
 const errors = ref<Record<string, string>>({})
 
 onMounted(async () => {
-  await Promise.all([
-    loadArticle(),
-    loadTopics()
-  ])
+  await loadTopics()
 })
-
-const loadArticle = async () => {
-  try {
-    const article = await fetchArticle(articleSlug)
-    if (article) {
-      form.value = {
-        title: article.title || '',
-        slug: article.slug || '',
-        excerpt: article.excerpt || '',
-        content: article.content || '',
-        topic_id: article.topic?.id || '',
-        tags: article.tags || [],
-        featured_image: article.featured_image || '',
-        is_featured: article.is_featured || false,
-        allow_comments: article.allow_comments !== false,
-        status: article.status || 'draft',
-        publish_date: article.published_at ? new Date(article.published_at).toISOString().slice(0, 16) : '',
-        social_meta: article.social_meta || {
-          og_title: '',
-          og_description: '',
-          og_image: '',
-          twitter_card: 'summary_large_image',
-          twitter_title: '',
-          twitter_description: '',
-          twitter_image: ''
-        }
-      }
-      
-      // Convert tags array to comma-separated string
-      tagsInput.value = form.value.tags.join(', ')
-    }
-  } catch (error) {
-    console.error('Failed to load article:', error)
-    notify({
-      title: 'Error',
-      text: 'Failed to load article',
-      type: 'error'
-    })
-    router.push({ name: 'admin-articles' })
-  } finally {
-    loading.value = false
-  }
-}
 
 const loadTopics = async () => {
   try {
@@ -471,23 +562,23 @@ const saveArticle = async () => {
         : null
     }
     
-    const response = await updateArticle(articleSlug, articleData)
+    const response = await createArticle(articleData)
     
     if (response) {
       notify({
         title: 'Success',
-        text: form.value.status === 'published' ? 'Article updated and published!' : 'Draft updated successfully!',
+        text: form.value.status === 'published' ? 'Article published successfully!' : 'Draft saved successfully!',
         type: 'success'
       })
       
       router.push({ name: 'admin-articles' })
     }
   } catch (error: any) {
-    console.error('Failed to update article:', error)
+    console.error('Failed to save article:', error)
     
     notify({
       title: 'Error',
-      text: error.message || 'Failed to update article',
+      text: error.message || 'Failed to save article',
       type: 'error'
     })
   } finally {
@@ -498,4 +589,5 @@ const saveArticle = async () => {
 // Watch title changes to auto-generate slug
 const title = computed(() => form.value.title)
 watch(title, handleTitleChange)
-</script>
+</script
+>

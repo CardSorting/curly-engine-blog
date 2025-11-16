@@ -10,7 +10,7 @@
             </router-link>
           </div>
           <div class="flex items-center">
-            <!-- Minimal nav - search is the focus -->
+            <ThemeToggle />
           </div>
         </div>
       </div>
@@ -147,6 +147,7 @@ import { useArticles } from '@/composables/useApi'
 import { type Article, type PaginatedResponse } from '@/types/api'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
 const route = useRoute()

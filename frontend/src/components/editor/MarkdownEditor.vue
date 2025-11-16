@@ -1,5 +1,5 @@
 <template>
-  <div class="markdown-editor">
+  <div class="markdown-editor" @dragover.prevent @drop.prevent="handleDrop">
     <!-- Editor Toolbar -->
     <div class="flex items-center justify-between mb-2">
       <div class="flex items-center space-x-2">
@@ -151,6 +151,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { marked } from 'marked'
+import { useMedia } from '@/composables/useApi'
+import { useNotification } from '@kyvg/vue3-notification'
 
 interface Props {
   modelValue: string
@@ -244,6 +246,54 @@ const togglePreview = () => {
 }
 
 // Watch for external changes
+const { uploadMedia } = useMedia()
+const { notify } = useNotification()
+
+const handleDrop = async (event: DragEvent) => {
+  const files = event.dataTransfer?.files
+  if (!files || files.length === 0) return
+  
+  const file = files[0]
+  if (!file || !file.type.startsWith('image/')) {
+    notify({
+      title: 'Error',
+      text: 'Please drop an image file',
+      type: 'error'
+    })
+    return
+  }
+  
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  try {
+    const response = await uploadMedia(formData)
+    if (response && response.file) {
+      const markdown = `![${response.file.name}](${response.file.url})`
+      const textarea = textareaRef.value
+      if (textarea) {
+        const start = textarea.selectionStart
+        content.value = content.value.substring(0, start) + markdown + content.value.substring(start)
+        nextTick(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + markdown.length
+          textarea.focus()
+        })
+      }
+      notify({
+        title: 'Success',
+        text: 'Image uploaded successfully',
+        type: 'success'
+      })
+    }
+  } catch (error) {
+    notify({
+      title: 'Error',
+      text: 'Failed to upload image',
+      type: 'error'
+    })
+  }
+}
+
 watch(() => props.modelValue, (newValue) => {
   if (newValue !== content.value) {
     content.value = newValue

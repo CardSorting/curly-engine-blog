@@ -81,7 +81,10 @@
             </div>
 
             <!-- Right side items -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center gap-4">
+              <!-- Theme Toggle -->
+              <ThemeToggle />
+              
               <!-- Account Switcher -->
               <div class="relative">
                 <button
@@ -204,11 +207,13 @@ import {
   BuildingOfficeIcon,
   ChevronDownIcon,
   TagIcon,
-  NewspaperIcon
+  NewspaperIcon,
+  PaperAirplaneIcon
 } from '@heroicons/vue/24/outline'
 import { useAuthStore } from '@/stores/auth'
 import { useTenantStore } from '@/stores/tenant'
 import type { Account } from '@/types/api'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -287,6 +292,12 @@ const navigationItems = computed(() => [
     name: 'Analytics',
     to: { name: 'admin-analytics' },
     icon: ChartBarIcon,
+    roles: ['admin', 'editor']
+  },
+  {
+    name: 'Newsletter',
+    to: { name: 'admin-newsletter' },
+    icon: PaperAirplaneIcon,
     roles: ['admin', 'editor']
   },
   {

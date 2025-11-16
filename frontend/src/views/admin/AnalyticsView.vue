@@ -3,8 +3,20 @@
     <div class="px-4 sm:px-6 lg:px-8 py-8">
       <div class="sm:flex sm:items-center">
         <div class="sm:flex-auto">
-          <h1 class="text-2xl font-semibold text-gray-900">Analytics</h1>
+          <h1 class="text-2xl font-semibold text-gray-900">Analytics Dashboard</h1>
           <p class="mt-2 text-sm text-gray-700">Track your blog's performance and engagement metrics.</p>
+        </div>
+        <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+          <select
+            v-model="selectedPeriod"
+            @change="loadAnalytics"
+            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+          >
+            <option value="7">Last 7 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="90">Last 90 days</option>
+            <option value="365">Last year</option>
+          </select>
         </div>
       </div>
 
@@ -12,7 +24,7 @@
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
       </div>
 
-      <div v-else class="mt-8">
+      <div v-else class="mt-8 space-y-8">
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <div class="bg-white overflow-hidden shadow rounded-lg">
@@ -26,6 +38,15 @@
                     <dt class="text-sm font-medium text-gray-500 truncate">Total Views</dt>
                     <dd class="text-lg font-medium text-gray-900">{{ stats.totalViews.toLocaleString() }}</dd>
                   </dl>
+                  <div class="mt-1">
+                    <span :class="[
+                      'text-xs font-semibold',
+                      stats.viewsChange >= 0 ? 'text-green-600' : 'text-red-600'
+                    ]">
+                      {{ stats.viewsChange >= 0 ? '+' : '' }}{{ stats.viewsChange }}%
+                    </span>
+                    <span class="text-xs text-gray-500">vs last period</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -42,6 +63,11 @@
                     <dt class="text-sm font-medium text-gray-500 truncate">Total Articles</dt>
                     <dd class="text-lg font-medium text-gray-900">{{ stats.totalArticles }}</dd>
                   </dl>
+                  <div class="mt-1">
+                    <span class="text-xs font-semibold text-blue-600">
+                      {{ stats.publishedArticles }} published
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -51,13 +77,22 @@
             <div class="p-5">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <ChartBarIcon class="h-6 w-6 text-green-500" />
+                  <UsersIcon class="h-6 w-6 text-green-500" />
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Published</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.publishedArticles }}</dd>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Subscribers</dt>
+                    <dd class="text-lg font-medium text-gray-900">{{ stats.totalSubscribers.toLocaleString() }}</dd>
                   </dl>
+                  <div class="mt-1">
+                    <span :class="[
+                      'text-xs font-semibold',
+                      stats.subscribersChange >= 0 ? 'text-green-600' : 'text-red-600'
+                    ]">
+                      {{ stats.subscribersChange >= 0 ? '+' : '' }}{{ stats.subscribersChange }}
+                    </span>
+                    <span class="text-xs text-gray-500">this month</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -67,62 +102,129 @@
             <div class="p-5">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <DocumentTextIcon class="h-6 w-6 text-yellow-500" />
+                  <ClockIcon class="h-6 w-6 text-yellow-500" />
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
-                    <dt class="text-sm font-medium text-gray-500 truncate">Drafts</dt>
-                    <dd class="text-lg font-medium text-gray-900">{{ stats.draftArticles }}</dd>
+                    <dt class="text-sm font-medium text-gray-500 truncate">Avg. Reading Time</dt>
+                    <dd class="text-lg font-medium text-gray-900">{{ stats.avgReadingTime }}m</dd>
                   </dl>
+                  <div class="mt-1">
+                    <span class="text-xs text-gray-500">per article</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Recent Articles -->
-        <div class="mt-8">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Articles</h3>
-          <div class="mt-5 bg-white shadow overflow-hidden sm:rounded-md">
-            <ul class="divide-y divide-gray-200">
-              <li v-for="article in recentArticles" :key="article.id">
-                <div class="px-4 py-4 flex items-center sm:px-6">
-                  <div class="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p class="text-sm font-medium text-gray-900 truncate">{{ article.title }}</p>
-                      <p class="mt-1 text-sm text-gray-500">
-                        {{ article.view_count || 0 }} views • 
-                        {{ new Date(article.created_at).toLocaleDateString() }}
-                      </p>
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Views Over Time Chart -->
+          <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Views Over Time</h3>
+            </div>
+            <div class="p-6">
+              <ViewsChart :data="chartData.views" />
+            </div>
+          </div>
+
+          <!-- Articles by Status Chart -->
+          <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Articles by Status</h3>
+            </div>
+            <div class="p-6">
+              <StatusChart :data="chartData.status" />
+            </div>
+          </div>
+
+          <!-- Top Topics Chart -->
+          <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Top Topics</h3>
+            </div>
+            <div class="p-6">
+              <TopicsChart :data="chartData.topics" />
+            </div>
+          </div>
+
+          <!-- Engagement Metrics -->
+          <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900">Engagement Metrics</h3>
+            </div>
+            <div class="p-6">
+              <EngagementChart :data="chartData.engagement" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Articles Table -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-md">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Recent Articles Performance</h3>
+          </div>
+          <div class="divide-y divide-gray-200">
+            <div
+              v-for="article in recentArticles"
+              :key="article.id"
+              class="px-6 py-4 hover:bg-gray-50"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-3">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ article.title }}</p>
+                    <span
+                      :class="[
+                        'inline-flex rounded-full px-2 text-xs font-semibold leading-5',
+                        article.is_published
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      ]"
+                    >
+                      {{ article.is_published ? 'Published' : 'Draft' }}
+                    </span>
+                  </div>
+                  <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                    <span>{{ article.view_count || 0 }} views</span>
+                    <span>{{ article.reading_time }} min read</span>
+                    <span>{{ new Date(article.created_at).toLocaleDateString() }}</span>
+                    <span v-if="article.topic">{{ article.topic.name }}</span>
+                  </div>
+                </div>
+                <div class="ml-4 flex-shrink-0">
+                  <div class="text-right">
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ getArticlePerformance(article) }}
                     </div>
-                    <div class="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
-                      <span
-                        :class="[
-                          'inline-flex rounded-full px-2 text-xs font-semibold leading-5',
-                          article.is_published
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        ]"
-                      >
-                        {{ article.is_published ? 'Published' : 'Draft' }}
-                      </span>
+                    <div class="text-xs text-gray-500">
+                      {{ getPerformanceLabel(article) }}
                     </div>
                   </div>
                 </div>
-              </li>
-            </ul>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Charts Placeholder -->
-        <div class="mt-8">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Performance Charts</h3>
-          <div class="mt-5 bg-white shadow rounded-lg p-6">
-            <div class="text-center py-12">
-              <ChartBarIcon class="mx-auto h-12 w-12 text-gray-400" />
-              <h3 class="mt-2 text-sm font-medium text-gray-900">Coming Soon</h3>
-              <p class="mt-1 text-sm text-gray-500">Detailed charts and analytics will be available soon.</p>
-            </div>
+        <!-- Export Options -->
+        <div class="bg-white shadow rounded-lg p-6">
+          <h3 class="text-lg font-medium text-gray-900 mb-4">Export Analytics</h3>
+          <div class="flex space-x-4">
+            <Button @click="exportData('csv')" variant="outline">
+              <DocumentArrowDownIcon class="h-4 w-4 mr-2" />
+              Export as CSV
+            </Button>
+            <Button @click="exportData('pdf')" variant="outline">
+              <DocumentArrowDownIcon class="h-4 w-4 mr-2" />
+              Export as PDF
+            </Button>
+            <Button @click="refreshData" :loading="refreshing">
+              <ArrowPathIcon class="h-4 w-4 mr-2" />
+              Refresh Data
+            </Button>
           </div>
         </div>
       </div>
@@ -131,45 +233,172 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
-import { ChartBarIcon, EyeIcon, DocumentTextIcon, UsersIcon } from '@heroicons/vue/24/outline'
-import { ref, onMounted } from 'vue'
+import Button from '@/components/ui/Button.vue'
+import ViewsChart from '@/components/charts/ViewsChart.vue'
+import StatusChart from '@/components/charts/StatusChart.vue'
+import TopicsChart from '@/components/charts/TopicsChart.vue'
+import EngagementChart from '@/components/charts/EngagementChart.vue'
 import { useArticles } from '@/composables/useApi'
-import { type Article } from '@/types/api'
+import { useNewsletter } from '@/composables/useApi'
+import type { Article } from '@/types/api'
+import {
+  ChartBarIcon,
+  EyeIcon,
+  DocumentTextIcon,
+  UsersIcon,
+  ClockIcon,
+  DocumentArrowDownIcon,
+  ArrowPathIcon,
+} from '@heroicons/vue/24/outline'
 
 const { fetchArticles } = useArticles()
+const { subscribe } = useNewsletter()
 
-const stats = ref({
-  totalViews: 0,
-  totalArticles: 0,
-  publishedArticles: 0,
-  draftArticles: 0
-})
-
-const recentArticles = ref<Article[]>([])
+const selectedPeriod = ref('30')
 const loading = ref(true)
+const refreshing = ref(false)
+const articles = ref<Article[]>([])
 
-onMounted(async () => {
-  await loadAnalytics()
+const stats = computed(() => {
+  const publishedArticles = articles.value.filter(a => a.is_published)
+  const totalViews = articles.value.reduce((sum, a) => sum + (a.view_count || 0), 0)
+  const avgReadingTime = publishedArticles.length > 0
+    ? Math.round(publishedArticles.reduce((sum, a) => sum + a.reading_time, 0) / publishedArticles.length)
+    : 0
+
+  return {
+    totalViews,
+    totalArticles: articles.value.length,
+    publishedArticles: publishedArticles.length,
+    draftArticles: articles.value.filter(a => !a.is_published).length,
+    totalSubscribers: 1250, // Mock data - would come from API
+    subscribersChange: 45, // Mock data
+    viewsChange: 12.5, // Mock data
+    avgReadingTime,
+  }
 })
+
+const recentArticles = computed(() => {
+  return articles.value
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 10)
+})
+
+const chartData = computed(() => {
+  // Generate mock chart data based on articles
+  const last30Days = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date()
+    date.setDate(date.getDate() - (29 - i))
+    return date.toISOString().split('T')[0]
+  })
+
+  const viewsData = last30Days.map(date => ({
+    date: date || '',
+    views: Math.floor(Math.random() * 100) + 20, // Mock data
+  }))
+
+  const statusData = [
+    { name: 'Published', value: stats.value.publishedArticles, color: '#10b981' },
+    { name: 'Draft', value: stats.value.draftArticles, color: '#f59e0b' },
+  ]
+
+  // Count articles by topic
+  const topicCounts: Record<string, number> = {}
+  articles.value.forEach(article => {
+    if (article.topic) {
+      topicCounts[article.topic.name] = (topicCounts[article.topic.name] || 0) + 1
+    }
+  })
+
+  const topicsData = Object.entries(topicCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5)
+
+  const engagementData = [
+    { metric: 'Avg. Views/Article', value: Math.round(stats.value.totalViews / Math.max(stats.value.publishedArticles, 1)) },
+    { metric: 'Avg. Reading Time', value: stats.value.avgReadingTime },
+    { metric: 'Top Article Views', value: Math.max(...articles.value.map(a => a.view_count || 0), 0) },
+    { metric: 'Engagement Rate', value: 4.2 }, // Mock data
+  ]
+
+  return {
+    views: viewsData,
+    status: statusData,
+    topics: topicsData,
+    engagement: engagementData,
+  }
+})
+
+const getArticlePerformance = (article: Article) => {
+  const views = article.view_count || 0
+  if (views > 1000) return 'Excellent'
+  if (views > 500) return 'Good'
+  if (views > 100) return 'Average'
+  return 'Low'
+}
+
+const getPerformanceLabel = (article: Article) => {
+  const views = article.view_count || 0
+  return `${views} views`
+}
 
 const loadAnalytics = async () => {
+  loading.value = true
   try {
     const response = await fetchArticles()
-    const articles = response?.results || response || []
-    
-    stats.value.totalArticles = articles.length
-    stats.value.publishedArticles = articles.filter((a: Article) => a.is_published).length
-    stats.value.draftArticles = articles.filter((a: Article) => !a.is_published).length
-    stats.value.totalViews = articles.reduce((sum: number, a: Article) => sum + (a.view_count || 0), 0)
-    
-    recentArticles.value = articles
-      .sort((a: Article, b: Article) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 5)
+    articles.value = response?.results || response || []
   } catch (error) {
     console.error('Failed to load analytics:', error)
   } finally {
     loading.value = false
   }
 }
+
+const refreshData = async () => {
+  refreshing.value = true
+  await loadAnalytics()
+  refreshing.value = false
+}
+
+const exportData = async (format: 'csv' | 'pdf') => {
+  // Mock export functionality
+  const data = articles.value.map(article => ({
+    title: article.title,
+    status: article.is_published ? 'Published' : 'Draft',
+    views: article.view_count || 0,
+    reading_time: article.reading_time,
+    topic: article.topic?.name || 'N/A',
+    created_at: article.created_at,
+  }))
+
+  if (data.length === 0) {
+    console.warn('No data to export')
+    return
+  }
+
+  if (format === 'csv') {
+    const csv = [
+      Object.keys(data[0] || {}).join(','),
+      ...data.map(row => Object.values(row).map(v => `"${v}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `analytics-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } else {
+    // PDF export would require a PDF library
+    console.log('PDF export not implemented yet')
+  }
+}
+
+onMounted(() => {
+  loadAnalytics()
+})
 </script>

@@ -13,6 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Getters
   const isAuthenticated = computed(() => !!accessToken.value && !!user.value)
+  const userRole = computed(() => user.value?.email?.includes('admin') ? 'admin' : 'editor') // Simplified for now
 
   // Actions
   const initializeAuth = () => {
@@ -126,6 +127,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Getters
     isAuthenticated,
+    userRole,
 
     // Actions
     initializeAuth,

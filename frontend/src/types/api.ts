@@ -92,6 +92,15 @@ export interface Article {
   word_count: number
   reading_time: number
   view_count: number
+  social_meta?: {
+    og_title?: string
+    og_description?: string
+    og_image?: string
+    twitter_card?: string
+    twitter_title?: string
+    twitter_description?: string
+    twitter_image?: string
+  }
   created_at: string
   updated_at: string
 }

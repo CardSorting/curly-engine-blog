@@ -10,6 +10,9 @@
             </router-link>
           </div>
           <div class="flex items-center space-x-6">
+            <!-- Theme Toggle -->
+            <ThemeToggle />
+            
             <!-- Topic Filter -->
             <div class="relative">
               <select
@@ -104,6 +107,7 @@ import { useArticles, useTopics } from '@/composables/useApi'
 import { type Article, type Topic } from '@/types/api'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
 const { data: articles, loading, error, fetchArticles } = useArticles()

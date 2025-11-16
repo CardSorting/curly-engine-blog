@@ -1,5 +1,21 @@
 <template>
   <div class="min-h-screen bg-white">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <router-link to="/" class="text-xl font-bold text-gray-900">
+              {{ appName }}
+            </router-link>
+          </div>
+          <div class="flex items-center">
+            <ThemeToggle />
+          </div>
+        </div>
+      </div>
+    </nav>
+    
     <!-- Loading state -->
     <div v-if="loading" class="flex justify-center items-center min-h-[50vh]">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -76,6 +92,14 @@
         <VueMarkdownRender :source="article.content" />
       </div>
 
+      <!-- Social sharing -->
+      <div class="mt-8">
+        <SocialShare 
+          :title="article.title"
+          :description="article.excerpt"
+        />
+      </div>
+
       <!-- Article footer -->
       <footer class="mt-12 pt-8 border-t border-gray-200">
         <div class="flex flex-wrap items-center justify-between gap-4">
@@ -101,8 +125,11 @@ import { useRoute } from 'vue-router'
 import VueMarkdownRender from 'vue-markdown-render'
 import { useArticles } from '@/composables/useApi'
 import type { Article } from '@/types/api'
+import SocialShare from '@/components/SocialShare.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const route = useRoute()
+const appName = ref(import.meta.env.VITE_APP_NAME || 'Chronicle')
 const articleSlug = computed(() => route.params.articleSlug as string)
 const accountSlug = computed(() => route.params.accountSlug as string)
 

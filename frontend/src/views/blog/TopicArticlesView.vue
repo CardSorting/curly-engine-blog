@@ -9,6 +9,9 @@
               {{ appName }}
             </router-link>
           </div>
+          <div class="flex items-center">
+            <ThemeToggle />
+          </div>
           <div class="flex items-center space-x-4">
             <router-link to="/search" class="text-gray-600 hover:text-gray-900">
               Search
@@ -70,7 +73,18 @@
             clickable
             class="h-full"
             @click="navigateToArticle(article)"
-          />
+          >
+            <template #footer>
+              <div class="pt-4 border-t border-gray-100">
+                <SocialShare 
+                  :title="article.title"
+                  :description="article.excerpt"
+                  :url="getArticleUrl(article)"
+                  class="scale-90 origin-left"
+                />
+              </div>
+            </template>
+          </Card>
         </div>
       </div>
 
@@ -100,6 +114,8 @@ import { useTopics } from '@/composables/useApi'
 import { type Article, type Topic, type PaginatedResponse } from '@/types/api'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
+import SocialShare from '@/components/SocialShare.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -112,6 +128,15 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 
 const topicSlug = computed(() => route.params.topicSlug as string)
+const accountSlug = computed(() => route.params.accountSlug as string)
+
+// Get origin for URLs
+const origin = computed(() => window.location.origin)
+
+// Generate article URL
+const getArticleUrl = (article: Article) => {
+  return `${origin.value}/blog/${accountSlug.value}/articles/${article.slug}`
+}
 
 onMounted(async () => {
   await loadTopicAndArticles()
