@@ -213,14 +213,23 @@
   <div v-else class="min-h-screen flex items-center justify-center bg-gray-50">
     <div class="text-center">
       <div class="text-6xl mb-4">📝</div>
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Editorial Not Found</h1>
-      <p class="text-gray-600 mb-6">The editorial you're looking for doesn't exist or has been removed.</p>
-      <router-link
-        to="/"
-        class="inline-block bg-blue-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-blue-700 transition-colors"
-      >
-        Browse Editorials
-      </router-link>
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">
+        {{ accountError ? 'Editorial Error' : 'Editorial Not Found' }}
+      </h1>
+      <p class="text-gray-600 mb-6">
+        {{ accountError || 'The editorial you\'re looking for doesn\'t exist or has been removed.' }}
+      </p>
+      <div class="space-x-4">
+        <Button @click="retryLoad" variant="primary">
+          Try Again
+        </Button>
+        <router-link
+          to="/"
+          class="inline-block bg-gray-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-gray-700 transition-colors"
+        >
+          Browse Editorials
+        </router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -246,6 +255,7 @@ const tenantStore = useTenantStore()
 const loadingAccount = ref(true)
 const loadingArticles = ref(true)
 const accountId = ref<string | null>(null)
+const accountError = ref<string | null>(null)
 
 // Computed properties
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -282,25 +292,19 @@ const loadAccount = async (slug: string) => {
     // Fetch account details from the API using proper endpoint format
     const response = await apiClient.get(`/accounts/public_detail/?slug=${encodeURIComponent(slug)}`)
 
-    tenantStore.setCurrentAccount(response.data)
-  } catch (err) {
-    console.error('Failed to load account:', err)
-    // Fallback to previous behavior if API fails (during development)
-    const mockAccount: Account = {
-      id: slug,
-      name: slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-      slug: slug,
-      description: `A curated editorial space for ${slug.replace('-', ' ')}`,
-      owner: { id: '1', email: 'owner@example.com', username: 'owner', bio: '', avatar: null, is_trialing: false, trial_ends_at: null, email_notifications: true, marketing_emails: false, date_joined: '2024-01-01', last_login: null },
-      subscription_plan: null,
-      subscription_status: 'active',
-      current_article_count: Math.floor(Math.random() * 50) + 10,
-      current_storage_mb: 100,
-      is_active: true,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z'
+    // Validate that we received a proper account object
+    if (response.data && response.data.slug === slug) {
+      tenantStore.setCurrentAccount(response.data)
+    } else {
+      throw new Error('Invalid account data received')
     }
-    tenantStore.setCurrentAccount(mockAccount)
+  } catch (err: any) {
+    console.error('Failed to load account:', err)
+
+    // Clear any existing account data
+    tenantStore.setCurrentAccount(null)
+
+    throw err // Re-throw the error to be handled by the caller
   } finally {
     loadingAccount.value = false
   }
@@ -336,12 +340,21 @@ const navigateToArticle = (article: ArticleSummary) => {
   }
 }
 
+const retryLoad = async () => {
+  accountError.value = null
+  await loadAccount(accountSlug.value)
+}
+
 // Initialize on mount
 onMounted(async () => {
   const slug = route.params.accountSlug as string
   if (slug) {
-    await loadAccount(slug)
-    await loadArticles()
+    try {
+      await loadAccount(slug)
+      await loadArticles()
+    } catch (err: any) {
+      accountError.value = err.message || 'Failed to load editorial'
+    }
   }
 })
 
@@ -353,8 +366,13 @@ watch(
     if (newSlug && newSlug !== oldSlug) {
       const slugString = Array.isArray(newSlug) ? newSlug[0] : newSlug
       if (slugString) {
-        await loadAccount(slugString)
-        await loadArticles()
+        accountError.value = null
+        try {
+          await loadAccount(slugString)
+          await loadArticles()
+        } catch (err: any) {
+          accountError.value = err.message || 'Failed to load editorial'
+        }
       }
     }
   }

@@ -44,6 +44,41 @@ export interface SubscriptionPlan {
   is_active: boolean
 }
 
+// Billing and Subscription Types
+export interface SubscriptionStatus {
+  subscription_status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid'
+  subscription_plan: SubscriptionPlan | null
+  trial_ends_at: string | null
+  subscription_ends_at: string | null
+  usage: {
+    articles: {
+      current: number
+      limit: number
+      can_create: boolean
+    }
+    users: {
+      current: number
+      limit: number
+      can_add: boolean
+    }
+    storage: {
+      current: number
+      limit: number
+    }
+  }
+  is_trial_active: boolean
+  is_subscription_active: boolean
+}
+
+export interface BillingInfo {
+  subscription_status: string
+  subscription_plan: SubscriptionPlan | null
+  trial_ends_at: string | null
+  subscription_ends_at: string | null
+  stripe_customer_id: string | null
+  stripe_subscription_id: string | null
+}
+
 // User Types
 export interface User {
   id: string

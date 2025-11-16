@@ -214,6 +214,12 @@ export function useNewsletter<T = unknown>() {
   const exportSubscribers = (params?: ApiParams) =>
     api.execute(apiClient.get, '/newsletter/subscribers/export/', { params })
 
+  const updateSubscriber = (id: string, data: Partial<{ is_active: boolean; first_name: string; last_name: string }>) =>
+    api.execute(apiClient.patch, `/newsletter/subscribers/${id}/`, data)
+
+  const deleteSubscriber = (id: string) =>
+    api.execute(apiClient.delete, `/newsletter/subscribers/${id}/`)
+
   return {
     ...api,
     subscribe,
@@ -222,6 +228,8 @@ export function useNewsletter<T = unknown>() {
     getSubscriberStats,
     importSubscribers,
     exportSubscribers,
+    updateSubscriber,
+    deleteSubscriber,
   }
 }
 
@@ -322,5 +330,34 @@ export function useAnalytics<T = unknown>() {
     getTrafficSources,
     getUserEngagement,
     exportAnalytics,
+  }
+}
+
+// Account and billing management composables
+export function useBilling<T = unknown>() {
+  const api = useApi<T>()
+
+  const getSubscriptionPlans = () =>
+    api.execute(apiClient.get, '/subscription-plans/')
+
+  const getAccountSubscription = (accountId: string) =>
+    api.execute(apiClient.get, `/accounts/${accountId}/subscription_status/`)
+
+  const getAccountBillingInfo = (accountId: string) =>
+    api.execute(apiClient.get, `/accounts/${accountId}/billing_info/`)
+
+  const upgradeSubscriptionPlan = (accountId: string, planId: string) =>
+    api.execute(apiClient.post, `/accounts/${accountId}/upgrade_plan/`, { plan_id: planId })
+
+  const cancelSubscription = (accountId: string) =>
+    api.execute(apiClient.post, `/accounts/${accountId}/cancel_subscription/`)
+
+  return {
+    ...api,
+    getSubscriptionPlans,
+    getAccountSubscription,
+    getAccountBillingInfo,
+    upgradeSubscriptionPlan,
+    cancelSubscription,
   }
 }

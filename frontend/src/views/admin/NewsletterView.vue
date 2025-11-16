@@ -92,7 +92,17 @@
         </div>
 
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
-          <div class="divide-y divide-gray-200">
+          <!-- Empty State for Campaigns -->
+          <div v-if="filteredCampaigns.length === 0" class="text-center py-12">
+            <PaperAirplaneIcon class="mx-auto h-12 w-12 text-gray-400" />
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No campaigns found</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              Get started by creating your first newsletter campaign.
+            </p>
+          </div>
+
+          <!-- Campaigns List -->
+          <div v-else class="divide-y divide-gray-200">
             <div
               v-for="campaign in filteredCampaigns"
               :key="campaign.id"
@@ -162,9 +172,19 @@
         </div>
 
         <div class="bg-white shadow overflow-hidden sm:rounded-md">
-          <div class="divide-y divide-gray-200">
+          <!-- Empty State for Subscribers -->
+          <div v-if="subscribers.length === 0" class="text-center py-12">
+            <UsersIcon class="mx-auto h-12 w-12 text-gray-400" />
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No subscribers yet</h3>
+            <p class="mt-1 text-sm text-gray-500">
+              Start building your newsletter list by importing subscribers or collecting sign-ups.
+            </p>
+          </div>
+
+          <!-- Subscribers List -->
+          <div v-else class="divide-y divide-gray-200">
             <div
-              v-for="subscriber in recentSubscribers"
+              v-for="subscriber in subscribers"
               :key="subscriber.id"
               class="px-6 py-4 hover:bg-gray-50"
             >
@@ -182,8 +202,8 @@
                     </span>
                   </div>
                   <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                    <span>Subscribed {{ new Date(subscriber.created_at).toLocaleDateString() }}</span>
-                    <span v-if="subscriber.name">{{ subscriber.name }}</span>
+                    <span>Subscribed {{ new Date(subscriber.subscribed_at).toLocaleDateString() }}</span>
+                    <span v-if="subscriber.first_name">{{ subscriber.first_name }} {{ subscriber.last_name }}</span>
                   </div>
                 </div>
                 <div class="ml-4 flex-shrink-0 flex space-x-2">
@@ -347,6 +367,23 @@ import Button from '@/components/ui/Button.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { useNewsletter, useNewsletterCampaigns } from '@/composables/useApi'
 import { notify } from '@kyvg/vue3-notification'
+import type { Subscriber } from '@/types/api'
+
+// Define NewsletterCampaign type since it's not in the main types file
+interface NewsletterCampaign {
+  id: string
+  name: string
+  subject: string
+  content: string
+  status: 'draft' | 'sent' | 'scheduled'
+  sent_at: string | null
+  scheduled_at: string | null
+  recipients: number
+  open_rate: number | null
+  click_rate: number | null
+  created_at: string
+  updated_at: string
+}
 import {
   PlusIcon,
   UsersIcon,
@@ -357,52 +394,22 @@ import {
   ArrowUpTrayIcon,
 } from '@heroicons/vue/24/outline'
 
-const { subscribe } = useNewsletter()
+const { getSubscribers, getSubscriberStats, importSubscribers: apiImportSubscribers, exportSubscribers: apiExportSubscribers, updateSubscriber, deleteSubscriber } = useNewsletter()
+const { getCampaigns, getCampaign, createCampaign: apiCreateCampaign, updateCampaign, deleteCampaign, sendCampaign: apiSendCampaign, scheduleCampaign } = useNewsletterCampaigns()
 
 // Stats
 const stats = ref({
-  totalSubscribers: 1250,
-  newSubscribers: 45,
-  campaignsSent: 8,
-  openRate: 32.5,
-  openRateChange: 2.3,
-  clickRate: 4.2,
-  clickRateChange: 0.8,
+  totalSubscribers: 0,
+  newSubscribers: 0,
+  campaignsSent: 0,
+  openRate: 0,
+  openRateChange: 0,
+  clickRate: 0,
+  clickRateChange: 0,
 })
 
 // Campaigns
-const campaigns = ref([
-  {
-    id: '1',
-    name: 'Weekly Digest',
-    subject: 'This Week in Tech: Latest Updates',
-    status: 'sent',
-    sent_at: '2024-01-15T10:00:00Z',
-    recipients: 1250,
-    open_rate: 35.2,
-    click_rate: 4.8,
-  },
-  {
-    id: '2',
-    name: 'Product Launch',
-    subject: 'Introducing Our New Features!',
-    status: 'draft',
-    sent_at: null,
-    recipients: 0,
-    open_rate: 0,
-    click_rate: 0,
-  },
-  {
-    id: '3',
-    name: 'Monthly Newsletter',
-    subject: 'January 2024 Newsletter',
-    status: 'scheduled',
-    sent_at: '2024-01-20T09:00:00Z',
-    recipients: 1250,
-    open_rate: 0,
-    click_rate: 0,
-  },
-])
+const campaigns = ref<NewsletterCampaign[]>([])
 
 const campaignFilter = ref('all')
 const filteredCampaigns = computed(() => {
@@ -411,29 +418,7 @@ const filteredCampaigns = computed(() => {
 })
 
 // Subscribers
-const recentSubscribers = ref([
-  {
-    id: '1',
-    email: 'john@example.com',
-    name: 'John Doe',
-    is_active: true,
-    created_at: '2024-01-15T10:00:00Z',
-  },
-  {
-    id: '2',
-    email: 'jane@example.com',
-    name: 'Jane Smith',
-    is_active: true,
-    created_at: '2024-01-14T15:30:00Z',
-  },
-  {
-    id: '3',
-    email: 'inactive@example.com',
-    name: null,
-    is_active: false,
-    created_at: '2024-01-10T08:00:00Z',
-  },
-])
+const subscribers = ref<Subscriber[]>([])
 
 // Modals
 const showCreateModal = ref(false)
@@ -467,28 +452,31 @@ const getCampaignStatusClass = (status: string) => {
 const createCampaign = async () => {
   creatingCampaign.value = true
   try {
-    // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const campaign = {
-      id: Date.now().toString(),
+    const campaignData = {
       name: newCampaign.value.name,
       subject: newCampaign.value.subject,
-      status: newCampaign.value.sendOption === 'draft' ? 'draft' : 'sent',
-      sent_at: newCampaign.value.sendOption === 'now' ? new Date().toISOString() : null,
-      recipients: newCampaign.value.sendOption === 'draft' ? 0 : stats.value.totalSubscribers,
-      open_rate: 0,
-      click_rate: 0,
+      content: newCampaign.value.content,
     }
-    
-    campaigns.value.unshift(campaign)
-    
+
+    // Create the campaign via API
+    const createdCampaign = await apiCreateCampaign(campaignData) as NewsletterCampaign
+
+    // Handle send options
+    if (newCampaign.value.sendOption === 'now') {
+      await apiSendCampaign(createdCampaign.id)
+    } else if (newCampaign.value.sendOption === 'schedule' && newCampaign.value.scheduledAt) {
+      await scheduleCampaign(createdCampaign.id, newCampaign.value.scheduledAt)
+    }
+
+    // Reload campaigns list
+    await loadInitialData()
+
     notify({
       title: 'Success',
-      text: `Campaign "${campaign.name}" created successfully!`,
+      text: `Campaign "${newCampaign.value.name}" created successfully!`,
       type: 'success',
     })
-    
+
     showCreateModal.value = false
     resetCampaignForm()
   } catch (error) {
@@ -520,12 +508,13 @@ const editCampaign = (campaign: any) => {
   console.log('Edit campaign:', campaign)
 }
 
-const sendCampaign = async (campaign: any) => {
+const sendCampaign = async (campaign: NewsletterCampaign) => {
   try {
-    campaign.status = 'sent'
-    campaign.sent_at = new Date().toISOString()
-    campaign.recipients = stats.value.totalSubscribers
-    
+    await apiSendCampaign(campaign.id)
+
+    // Reload campaigns list to get updated data
+    await loadInitialData()
+
     notify({
       title: 'Success',
       text: 'Campaign sent successfully!',
@@ -540,39 +529,60 @@ const sendCampaign = async (campaign: any) => {
   }
 }
 
-const toggleSubscriberStatus = async (subscriber: any) => {
+const toggleSubscriberStatus = async (subscriber: Subscriber) => {
+  const originalStatus = subscriber.is_active
+
   try {
+    // Optimistically update the UI
     subscriber.is_active = !subscriber.is_active
+
+    // Update subscriber status via API
+    await updateSubscriber(subscriber.id, { is_active: subscriber.is_active })
+
     notify({
       title: 'Success',
       text: `Subscriber ${subscriber.is_active ? 'activated' : 'deactivated'}`,
       type: 'success',
     })
   } catch (error) {
+    // Revert optimistic update on error
+    subscriber.is_active = originalStatus
+
     notify({
       title: 'Error',
-      text: 'Failed to update subscriber',
+      text: 'Failed to update subscriber status',
       type: 'error',
     })
   }
 }
 
-const removeSubscriber = async (subscriber: any) => {
+const removeSubscriber = async (subscriber: Subscriber) => {
   if (!confirm(`Are you sure you want to remove ${subscriber.email}?`)) return
-  
+
+  const originalIndex = subscribers.value.findIndex(s => s.id === subscriber.id)
+  if (originalIndex === -1) return
+
+  // Store reference for potential restore
+  const removedSubscriber = subscribers.value[originalIndex] as Subscriber
+
+  // Optimistically remove from UI
+  subscribers.value.splice(originalIndex, 1)
+  stats.value.totalSubscribers = Math.max(0, stats.value.totalSubscribers - 1)
+
   try {
-    const index = recentSubscribers.value.findIndex(s => s.id === subscriber.id)
-    if (index > -1) {
-      recentSubscribers.value.splice(index, 1)
-      stats.value.totalSubscribers--
-    }
-    
+    // Delete subscriber via API
+    await deleteSubscriber(subscriber.id)
+
     notify({
       title: 'Success',
       text: 'Subscriber removed',
       type: 'success',
     })
   } catch (error) {
+    // Restore subscriber on error
+    subscribers.value.splice(originalIndex, 0, removedSubscriber)
+    stats.value.totalSubscribers++
+
     notify({
       title: 'Error',
       text: 'Failed to remove subscriber',
@@ -596,23 +606,25 @@ const handleFileUpload = (event: Event) => {
 
 const importSubscribers = async () => {
   if (!importFile.value) return
-  
+
   importing.value = true
   try {
-    // Mock import process
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    // Simulate importing 10 new subscribers
-    const newCount = 10
-    stats.value.totalSubscribers += newCount
-    stats.value.newSubscribers += newCount
-    
+    const result = await apiImportSubscribers(importFile.value)
+
+    // Reload subscribers and stats
+    await loadInitialData()
+
+    // Extract imported count from response if available
+    const importedCount = (result as any)?.imported_count || 0
+
     notify({
       title: 'Success',
-      text: `Successfully imported ${newCount} subscribers`,
+      text: importedCount > 0
+        ? `Successfully imported ${importedCount} subscribers`
+        : 'Subscribers imported successfully',
       type: 'success',
     })
-    
+
     showImportModal.value = false
     importFile.value = null
   } catch (error) {
@@ -626,34 +638,105 @@ const importSubscribers = async () => {
   }
 }
 
-const exportSubscribers = () => {
-  const data = recentSubscribers.value.map(sub => ({
-    email: sub.email,
-    name: sub.name || '',
-    status: sub.is_active ? 'Active' : 'Inactive',
-    created_at: sub.created_at,
-  }))
-  
-  if (data.length === 0) {
-    console.warn('No subscribers to export')
-    return
+const exportSubscribers = async () => {
+  try {
+    const response = await apiExportSubscribers()
+
+    // Create download link for the blob response
+    const blob = response as Blob
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `subscribers-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+
+    notify({
+      title: 'Success',
+      text: 'Subscribers exported successfully',
+      type: 'success',
+    })
+  } catch (error) {
+    notify({
+      title: 'Error',
+      text: 'Failed to export subscribers',
+      type: 'error',
+    })
   }
-  
-  const csv = [
-    Object.keys(data[0] || {}).join(','),
-    ...data.map(row => Object.values(row).map(v => `"${v}"`).join(','))
-  ].join('\n')
-  
-  const blob = new Blob([csv], { type: 'text/csv' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `subscribers-${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
 }
 
-onMounted(() => {
-  // Load initial data
+onMounted(async () => {
+  await loadInitialData()
 })
+
+const loadInitialData = async () => {
+  try {
+    const loadingStates = []
+
+    // Load campaigns with error handling
+    loadingStates.push(
+      getCampaigns().then((campaignsResponse) => {
+        if (campaignsResponse && Array.isArray(campaignsResponse)) {
+          campaigns.value = campaignsResponse as NewsletterCampaign[]
+        }
+      }).catch((error) => {
+        console.error('Failed to load campaigns:', error)
+      })
+    )
+
+    // Load subscribers with error handling
+    loadingStates.push(
+      getSubscribers({ page_size: 20 }).then((subscribersResponse) => {
+        if (subscribersResponse && typeof subscribersResponse === 'object' && 'results' in subscribersResponse) {
+          subscribers.value = subscribersResponse.results as Subscriber[]
+        }
+      }).catch((error) => {
+        console.error('Failed to load subscribers:', error)
+      })
+    )
+
+    // Load subscriber stats with error handling
+    loadingStates.push(
+      getSubscriberStats().then((statsResponse) => {
+        if (statsResponse && typeof statsResponse === 'object') {
+          const data = statsResponse as any
+          stats.value.totalSubscribers = data.total_subscribers || 0
+          stats.value.newSubscribers = data.new_subscribers_this_month || 0
+          // Calculate or load other stats from analytics if available
+          stats.value.campaignsSent = data.campaigns_sent_last_30_days || 0
+          stats.value.openRate = data.average_open_rate?.toFixed(1) || 0
+          stats.value.clickRate = data.average_click_rate?.toFixed(1) || 0
+          stats.value.openRateChange = data.open_rate_change || 0
+          stats.value.clickRateChange = data.click_rate_change || 0
+        }
+      }).catch((error) => {
+        console.error('Failed to load subscriber stats:', error)
+        // Reset stats to show no data rather than keeping placeholder values
+        stats.value = {
+          totalSubscribers: 0,
+          newSubscribers: 0,
+          campaignsSent: 0,
+          openRate: 0,
+          openRateChange: 0,
+          clickRate: 0,
+          clickRateChange: 0,
+        }
+      })
+    )
+
+    // Wait for all loading operations to complete
+    await Promise.allSettled(loadingStates)
+
+  } catch (error) {
+    console.error('Critical error loading newsletter data:', error)
+    // Ensure we don't show misleading placeholder data
+    campaigns.value = []
+    subscribers.value = []
+    notify({
+      title: 'Error',
+      text: 'Failed to load newsletter data. Please refresh the page.',
+      type: 'error',
+    })
+  }
+}
 </script>

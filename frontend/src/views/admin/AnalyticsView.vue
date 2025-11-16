@@ -126,7 +126,7 @@
               <h3 class="text-lg font-medium text-gray-900">Views Over Time</h3>
             </div>
             <div class="p-6">
-              <ViewsChart :data="chartData.views" />
+              <ViewsChart :data="chartData.value.views" />
             </div>
           </div>
 
@@ -136,7 +136,7 @@
               <h3 class="text-lg font-medium text-gray-900">Articles by Status</h3>
             </div>
             <div class="p-6">
-              <StatusChart :data="chartData.status" />
+              <StatusChart :data="chartData.value.status" />
             </div>
           </div>
 
@@ -146,7 +146,7 @@
               <h3 class="text-lg font-medium text-gray-900">Top Topics</h3>
             </div>
             <div class="p-6">
-              <TopicsChart :data="chartData.topics" />
+              <TopicsChart :data="chartData.value.topics" />
             </div>
           </div>
 
@@ -156,7 +156,7 @@
               <h3 class="text-lg font-medium text-gray-900">Engagement Metrics</h3>
             </div>
             <div class="p-6">
-              <EngagementChart :data="chartData.engagement" />
+              <EngagementChart :data="chartData.value.engagement" />
             </div>
           </div>
         </div>
@@ -240,8 +240,7 @@ import ViewsChart from '@/components/charts/ViewsChart.vue'
 import StatusChart from '@/components/charts/StatusChart.vue'
 import TopicsChart from '@/components/charts/TopicsChart.vue'
 import EngagementChart from '@/components/charts/EngagementChart.vue'
-import { useArticles } from '@/composables/useApi'
-import { useNewsletter } from '@/composables/useApi'
+import { useArticles, useAnalytics } from '@/composables/useApi'
 import type { Article } from '@/types/api'
 import {
   ChartBarIcon,
@@ -254,7 +253,12 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const { fetchArticles } = useArticles()
-const { subscribe } = useNewsletter()
+const {
+  getPageViewAnalytics,
+  getArticleAnalytics,
+  getUserEngagement,
+  exportAnalytics
+} = useAnalytics()
 
 const selectedPeriod = ref('30')
 const loading = ref(true)
@@ -300,25 +304,21 @@ const recentArticles = computed(() => {
     .slice(0, 10)
 })
 
-const chartData = computed(() => {
-  // Generate mock chart data based on articles
-  const last30Days = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (29 - i))
-    return date.toISOString().split('T')[0]
-  })
+const chartData = ref<any>({
+  views: [],
+  status: [],
+  topics: [],
+  engagement: [],
+})
 
-  const viewsData = last30Days.map(date => ({
-    date: date || '',
-    views: Math.floor(Math.random() * 100) + 20, // Mock data
-  }))
-
+const updateChartData = () => {
+  // Status data from articles
   const statusData = [
     { name: 'Published', value: stats.value.publishedArticles, color: '#10b981' },
     { name: 'Draft', value: stats.value.draftArticles, color: '#f59e0b' },
   ]
 
-  // Count articles by topic
+  // Topics data from articles
   const topicCounts: Record<string, number> = {}
   articles.value.forEach(article => {
     if (article.topic) {
@@ -331,20 +331,21 @@ const chartData = computed(() => {
     .sort((a, b) => b.value - a.value)
     .slice(0, 5)
 
-  const engagementData = [
+  // Use actual analytics data if available, fallback to calculated values
+  const viewsData = analyticsData.value?.pageViews || []
+  const engagementData = analyticsData.value?.engagement || [
     { metric: 'Avg. Views/Article', value: Math.round(stats.value.totalViews / Math.max(stats.value.publishedArticles, 1)) },
     { metric: 'Avg. Reading Time', value: stats.value.avgReadingTime },
     { metric: 'Top Article Views', value: Math.max(...articles.value.map(a => a.view_count || 0), 0) },
-    { metric: 'Engagement Rate', value: 4.2 }, // Mock data
   ]
 
-  return {
+  chartData.value = {
     views: viewsData,
     status: statusData,
     topics: topicsData,
     engagement: engagementData,
   }
-})
+}
 
 const getArticlePerformance = (article: Article) => {
   const views = article.view_count || 0
@@ -362,26 +363,32 @@ const getPerformanceLabel = (article: Article) => {
 const loadAnalytics = async () => {
   loading.value = true
   try {
-    // Load analytics data from the dashboard API
-    const analyticsResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/analytics/dashboard/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-      }
-    })
+    // Load analytics data using composables
+    const [pageViewsResponse, articlesResponse, engagementResponse] = await Promise.all([
+      getPageViewAnalytics({ period: selectedPeriod.value }),
+      fetchArticles(),
+      getUserEngagement({ period: selectedPeriod.value }),
+    ])
 
-    if (analyticsResponse.ok) {
-      analyticsData.value = await analyticsResponse.json()
-    } else {
-      console.error('Failed to load analytics data:', analyticsResponse.statusText)
+    // Set analytics data from API responses
+    analyticsData.value = {
+      pageViews: pageViewsResponse,
+      engagement: engagementResponse,
+      overview: {
+        total_views: pageViewsResponse?.total || 0,
+        total_unique_views: pageViewsResponse?.uniqueViews || 0,
+      }
     }
 
     // Still load articles for article-specific data
-    const articlesResponse = await fetchArticles()
     articles.value = Array.isArray(articlesResponse) ? articlesResponse : (articlesResponse as any)?.results || []
+
+    // Update chart data after loading
+    updateChartData()
   } catch (error) {
     console.error('Failed to load analytics:', error)
+    // Keep fallback data if API fails
+    updateChartData()
   } finally {
     loading.value = false
   }
@@ -394,37 +401,54 @@ const refreshData = async () => {
 }
 
 const exportData = async (format: 'csv' | 'pdf') => {
-  // Mock export functionality
-  const data = articles.value.map(article => ({
-    title: article.title,
-    status: article.is_published ? 'Published' : 'Draft',
-    views: article.view_count || 0,
-    reading_time: article.reading_time,
-    topic: article.topic?.name || 'N/A',
-    created_at: article.created_at,
-  }))
+  try {
+    // Use the exportAnalytics composable
+    const response = await exportAnalytics(format, {
+      period: selectedPeriod.value,
+      data_type: 'analytics'
+    })
 
-  if (data.length === 0) {
-    console.warn('No data to export')
-    return
-  }
+    // The exportAnalytics composable should handle the response appropriately
+    // If it's a blob response, create download link
+    if (response instanceof Blob) {
+      const url = URL.createObjectURL(response)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `analytics-${new Date().toISOString().split('T')[0]}.${format}`
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+  } catch (error) {
+    console.error('Export failed:', error)
+    // Fallback to mock export if API fails
+    if (format === 'csv') {
+      const data = articles.value.map(article => ({
+        title: article.title,
+        status: article.is_published ? 'Published' : 'Draft',
+        views: article.view_count || 0,
+        reading_time: article.reading_time,
+        topic: article.topic?.name || 'N/A',
+        created_at: article.created_at,
+      }))
 
-  if (format === 'csv') {
-    const csv = [
-      Object.keys(data[0] || {}).join(','),
-      ...data.map(row => Object.values(row).map(v => `"${v}"`).join(','))
-    ].join('\n')
+      if (data.length === 0) {
+        console.warn('No data to export')
+        return
+      }
 
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `analytics-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  } else {
-    // PDF export would require a PDF library
-    console.log('PDF export not implemented yet')
+      const csv = [
+        Object.keys(data[0] || {}).join(','),
+        ...data.map(row => Object.values(row).map(v => `"${v}"`).join(','))
+      ].join('\n')
+
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `analytics-${new Date().toISOString().split('T')[0]}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    }
   }
 }
 
