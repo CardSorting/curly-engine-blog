@@ -62,7 +62,7 @@
 
       <div v-else-if="error" class="text-center py-12">
         <p class="text-red-600">{{ error }}</p>
-        <Button @click="loadArticles" class="mt-4">
+        <Button @click="() => loadArticles()" class="mt-4">
           Try Again
         </Button>
       </div>
@@ -76,7 +76,7 @@
           :content="article.excerpt"
           clickable
           class="h-full"
-          @click="navigateToArticle(article)"
+          @click="() => navigateToArticle(article)"
         />
       </div>
 
@@ -100,21 +100,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { useArticles, useTopics } from '@/composables/useApi'
-import { type Article, type Topic } from '@/types/api'
+import { useTenantStore } from '@/stores/tenant'
+// Import types as needed
+
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
+interface Article {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  published_at: string | null
+  author: {
+    email: string
+  }
+}
+
+interface Topic {
+  id: string
+  slug: string
+  name: string
+  color?: string
+}
+
 const router = useRouter()
-const { data: articles, loading, error, fetchArticles } = useArticles()
-const { data: topics, fetchTopics } = useTopics()
+const tenantStore = useTenantStore()
+const { data: articles, loading, error, fetchArticles } = useArticles<Article[]>()
+const { data: topics, fetchTopics } = useTopics<Topic[]>()
 
 const appName = ref(import.meta.env.VITE_APP_NAME || 'Chronicle')
 const selectedTopic = ref('')
+const accountSlug = computed(() => tenantStore.accountSlug)
 
 onMounted(async () => {
   await Promise.all([
@@ -123,19 +145,22 @@ onMounted(async () => {
   ])
 })
 
-const loadArticles = async (params?: Record<string, any>) => {
-  await fetchArticles(params)
+const loadArticles = async (params?: Record<string, unknown>) => {
+  await fetchArticles(params, tenantStore.accountSlug || undefined)
 }
 
 const loadTopics = async () => {
-  await fetchTopics()
+  await fetchTopics({}, tenantStore.accountSlug || undefined)
 }
 
 const onTopicChange = () => {
-  const params: any = {}
   if (selectedTopic.value) {
-    // For topic filtering, we'll redirect to topic page
-    router.push(`/topics/${selectedTopic.value}`)
+    // For topic filtering, we'll redirect to topic page with account context
+    if (accountSlug.value) {
+      router.push(`/${accountSlug.value}/topics/${selectedTopic.value}`)
+    } else {
+      router.push('/login')
+    }
   } else {
     // Load all articles
     loadArticles()
@@ -152,8 +177,12 @@ const formatDate = (dateString: string | null): string => {
 }
 
 const navigateToArticle = (article: Article) => {
-  // For multi-tenant routing, we'd need account context here
-  // For now, redirect to login to set up account context
-  router.push('/login')
+  // Navigate to article detail page with proper tenant routing
+  if (accountSlug.value && article.slug) {
+    router.push(`/${accountSlug.value}/${article.slug}`)
+  } else {
+    // If no account context, try to find first available account or show error
+    router.push('/login')
+  }
 }
 </script>

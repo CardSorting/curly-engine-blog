@@ -148,7 +148,8 @@ const formatDate = (dateString: string) => {
 // Load article on mount
 onMounted(async () => {
   try {
-    await fetchArticle(articleSlug.value)
+    // For multi-tenant routing, we need to pass the account slug to the API
+    await fetchArticle(articleSlug.value, accountSlug.value)
     // TODO: Add meta tag setup with vue-meta
   } catch (err) {
     console.error('Failed to load article:', err)

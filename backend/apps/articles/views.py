@@ -16,29 +16,35 @@ from apps.accounts.permissions import IsAccountMember, IsArticleAuthorOrEditor, 
 
 class ArticleListView(generics.ListCreateAPIView):
     """List articles and create new articles"""
-    permission_classes = [IsAccountMember]
+    serializer_class = ArticleListSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['status', 'topic', 'author']
-    search_fields = ['title', 'excerpt', 'content']
+    filterset_fields = ['status', 'author']
+    search_fields = ['title', 'content', 'excerpt']
     ordering_fields = ['published_at', 'created_at', 'view_count']
-    ordering = ['-published_at', '-created_at']
+    ordering = ['-published_at']
 
     def get_queryset(self):
-        # Filter by tenant if available
+        # For public requests, only show published articles
+        if not self.request.user or not self.request.user.is_authenticated:
+            return Article.objects.filter(status='published')
+        
+        # For authenticated users, filter by tenant if available
         if hasattr(self.request, 'tenant') and self.request.tenant:
             queryset = Article.objects.filter(account=self.request.tenant)
         else:
             queryset = Article.objects.all()
         
-        # For non-authenticated users, only show published articles
-        if not self.request.user.is_authenticated:
-            queryset = queryset.filter(status='published')
+        # Non-staff users can only see their own drafts
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(
+                models.Q(status='published') | models.Q(author=self.request.user)
+            )
         return queryset
 
-    def get_serializer_class(self):
+    def get_permissions(self):
         if self.request.method == 'POST':
-            return ArticleCreateSerializer
-        return ArticleListSerializer
+            return [IsAccountMember]
+        return [IsAuthenticatedOrReadOnly]
 
 
 class ArticleDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -138,14 +144,24 @@ def publish_article(request, slug):
 class TopicListView(generics.ListCreateAPIView):
     """List topics and create new topics"""
     def get_queryset(self):
-        # Filter by tenant if available
+        # For public requests, show all topics
+        if not self.request.user or not self.request.user.is_authenticated:
+            return Topic.objects.all()
+        
+        # For authenticated users, filter by tenant if available
         if hasattr(self.request, 'tenant') and self.request.tenant:
             queryset = Topic.objects.filter(account=self.request.tenant)
         else:
             queryset = Topic.objects.all()
         return queryset
+    
     serializer_class = TopicSerializer
-    permission_classes = [IsAccountMember]
+    
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [IsAccountMember]
+        return [IsAuthenticatedOrReadOnly]
+    
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering = ['name']

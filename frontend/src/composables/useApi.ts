@@ -3,6 +3,13 @@ import { apiClient } from '@/services/api/config'
 import { notify } from '@kyvg/vue3-notification'
 import type { ApiError } from '@/types/api'
 
+// API parameter types
+type ApiParams = Record<string, unknown>
+type CreateData = Record<string, unknown>
+type UpdateData = Record<string, unknown>
+type CampaignData = Record<string, unknown>
+type SettingsData = Record<string, unknown>
+
 interface ApiState<T> {
   data: Ref<T | null>
   loading: Ref<boolean>
@@ -16,7 +23,7 @@ export function useApi<T>() {
     error: ref(null),
   }
 
-  const execute = async <P extends any[]>(
+  const execute = async <P extends unknown[]>(
     apiCall: (...args: P) => Promise<{ data: T }>,
     ...args: P
   ): Promise<T | null> => {
@@ -27,7 +34,7 @@ export function useApi<T>() {
       const response = await apiCall(...args)
       state.data.value = response.data
       return response.data
-    } catch (error: any) {
+    } catch (error: unknown) {
       const apiError = error as ApiError
       state.error.value = apiError.message || 'An error occurred'
 
@@ -58,19 +65,23 @@ export function useApi<T>() {
 }
 
 // Content management composables
-export function useArticles<T = any>() {
+export function useArticles<T = unknown>() {
   const api = useApi<T>()
 
-  const fetchArticles = (params?: Record<string, any>) =>
-    api.execute(apiClient.get, '/', { params })
+  const fetchArticles = (params?: ApiParams, accountSlug?: string) => {
+    const url = accountSlug ? `/${accountSlug}/` : '/'
+    return api.execute(apiClient.get, url, { params })
+  }
 
-  const fetchArticle = (slug: string) =>
-    api.execute(apiClient.get, `/detail/${slug}/`)
+  const fetchArticle = (slug: string, accountSlug?: string) => {
+    const url = accountSlug ? `/${accountSlug}/detail/${slug}/` : `/detail/${slug}/`
+    return api.execute(apiClient.get, url)
+  }
 
-  const createArticle = (data: any) =>
+  const createArticle = (data: CreateData) =>
     api.execute(apiClient.post, '/', data)
 
-  const updateArticle = (slug: string, data: any) =>
+  const updateArticle = (slug: string, data: UpdateData) =>
     api.execute(apiClient.put, `/detail/${slug}/`, data)
 
   const deleteArticle = (slug: string) =>
@@ -90,19 +101,23 @@ export function useArticles<T = any>() {
   }
 }
 
-export function useTopics<T = any>() {
+export function useTopics<T = unknown>() {
   const api = useApi<T>()
 
-  const fetchTopics = (params?: Record<string, any>) =>
-    api.execute(apiClient.get, '/topics/', { params })
+  const fetchTopics = (params?: ApiParams, accountSlug?: string) => {
+    const url = accountSlug ? `/${accountSlug}/topics/` : '/topics/'
+    return api.execute(apiClient.get, url, { params })
+  }
 
-  const fetchArticlesByTopic = (slug: string, params?: Record<string, any>) =>
-    api.execute(apiClient.get, `/topics/${slug}/articles/`, { params })
+  const fetchArticlesByTopic = (slug: string, params?: ApiParams, accountSlug?: string) => {
+    const url = accountSlug ? `/${accountSlug}/topics/${slug}/articles/` : `/topics/${slug}/articles/`
+    return api.execute(apiClient.get, url, { params })
+  }
 
-  const createTopic = (data: any) =>
+  const createTopic = (data: CreateData) =>
     api.execute(apiClient.post, '/topics/', data)
 
-  const updateTopic = (slug: string, data: any) =>
+  const updateTopic = (slug: string, data: UpdateData) =>
     api.execute(apiClient.put, `/topics/${slug}/`, data)
 
   const deleteTopic = (slug: string) =>
@@ -118,19 +133,19 @@ export function useTopics<T = any>() {
   }
 }
 
-export function usePages<T = any>() {
+export function usePages<T = unknown>() {
   const api = useApi<T>()
 
-  const fetchPages = (params?: Record<string, any>) =>
+  const fetchPages = (params?: ApiParams) =>
     api.execute(apiClient.get, '/pages/', { params })
 
   const fetchPage = (slug: string) =>
     api.execute(apiClient.get, `/pages/${slug}/`)
 
-  const createPage = (data: any) =>
+  const createPage = (data: CreateData) =>
     api.execute(apiClient.post, '/pages/', data)
 
-  const updatePage = (slug: string, data: any) =>
+  const updatePage = (slug: string, data: UpdateData) =>
     api.execute(apiClient.put, `/pages/${slug}/`, data)
 
   const deletePage = (slug: string) =>
@@ -146,10 +161,10 @@ export function usePages<T = any>() {
   }
 }
 
-export function useMedia<T = any>() {
+export function useMedia<T = unknown>() {
   const api = useApi<T>()
 
-  const fetchMedia = (params?: Record<string, any>) =>
+  const fetchMedia = (params?: ApiParams) =>
     api.execute(apiClient.get, '/media/', { params })
 
   const uploadMedia = (formData: FormData) =>
@@ -172,7 +187,7 @@ export function useMedia<T = any>() {
   }
 }
 
-export function useNewsletter<T = any>() {
+export function useNewsletter<T = unknown>() {
   const api = useApi<T>()
 
   const subscribe = (data: { email: string; first_name?: string; last_name?: string }) =>
@@ -181,7 +196,7 @@ export function useNewsletter<T = any>() {
   const unsubscribe = (data: { email: string }) =>
     api.execute(apiClient.post, '/newsletter/subscribers/unsubscribe/', data)
 
-  const getSubscribers = (params?: Record<string, any>) =>
+  const getSubscribers = (params?: ApiParams) =>
     api.execute(apiClient.get, '/newsletter/subscribers/', { params })
 
   const getSubscriberStats = () =>
@@ -195,7 +210,7 @@ export function useNewsletter<T = any>() {
     })
   }
 
-  const exportSubscribers = (params?: Record<string, any>) =>
+  const exportSubscribers = (params?: ApiParams) =>
     api.execute(apiClient.get, '/newsletter/subscribers/export/', { params })
 
   return {
@@ -209,25 +224,25 @@ export function useNewsletter<T = any>() {
   }
 }
 
-export function useNewsletterCampaigns<T = any>() {
+export function useNewsletterCampaigns<T = unknown>() {
   const api = useApi<T>()
 
-  const getCampaigns = (params?: Record<string, any>) =>
+  const getCampaigns = (params?: ApiParams) =>
     api.execute(apiClient.get, '/newsletter/campaigns/', { params })
 
   const getCampaign = (id: string) =>
     api.execute(apiClient.get, `/newsletter/campaigns/${id}/`)
 
-  const createCampaign = (data: any) =>
+  const createCampaign = (data: CampaignData) =>
     api.execute(apiClient.post, '/newsletter/campaigns/', data)
 
-  const updateCampaign = (id: string, data: any) =>
+  const updateCampaign = (id: string, data: CampaignData) =>
     api.execute(apiClient.put, `/newsletter/campaigns/${id}/`, data)
 
   const deleteCampaign = (id: string) =>
     api.execute(apiClient.delete, `/newsletter/campaigns/${id}/`)
 
-  const sendCampaign = (id: string, data?: any) =>
+  const sendCampaign = (id: string, data?: CampaignData) =>
     api.execute(apiClient.post, `/newsletter/campaigns/${id}/send/`, data)
 
   const getCampaignStats = (id: string) =>
@@ -249,7 +264,7 @@ export function useNewsletterCampaigns<T = any>() {
   }
 }
 
-export function useSeo<T = any>() {
+export function useSeo<T = unknown>() {
   const api = useApi<T>()
 
   const getSeoAudit = () =>
@@ -261,7 +276,7 @@ export function useSeo<T = any>() {
   const getGlobalSettings = () =>
     api.execute(apiClient.get, '/seo/settings/')
 
-  const updateGlobalSettings = (data: any) =>
+  const updateGlobalSettings = (data: SettingsData) =>
     api.execute(apiClient.put, '/seo/settings/', data)
 
   const generateSitemap = () =>
@@ -281,22 +296,22 @@ export function useSeo<T = any>() {
   }
 }
 
-export function useAnalytics<T = any>() {
+export function useAnalytics<T = unknown>() {
   const api = useApi<T>()
 
-  const getArticleAnalytics = (articleId?: string, params?: Record<string, any>) =>
+  const getArticleAnalytics = (articleId?: string, params?: ApiParams) =>
     api.execute(apiClient.get, articleId ? `/analytics/articles/${articleId}/` : '/analytics/articles/', { params })
 
-  const getPageViewAnalytics = (params?: Record<string, any>) =>
+  const getPageViewAnalytics = (params?: ApiParams) =>
     api.execute(apiClient.get, '/analytics/pageviews/', { params })
 
-  const getTrafficSources = (params?: Record<string, any>) =>
+  const getTrafficSources = (params?: ApiParams) =>
     api.execute(apiClient.get, '/analytics/traffic-sources/', { params })
 
-  const getUserEngagement = (params?: Record<string, any>) =>
+  const getUserEngagement = (params?: ApiParams) =>
     api.execute(apiClient.get, '/analytics/engagement/', { params })
 
-  const exportAnalytics = (format: 'csv' | 'pdf', params?: Record<string, any>) =>
+  const exportAnalytics = (format: 'csv' | 'pdf', params?: ApiParams) =>
     api.execute(apiClient.get, `/analytics/export/?format=${format}`, { params, responseType: 'blob' })
 
   return {
