@@ -47,6 +47,8 @@ class AccountViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated(), IsAccountAdmin()]
         elif self.action in ['manage_users', 'billing_info']:
             return [IsAuthenticated(), CanManageBilling()]
+        elif self.action in ['public_browse', 'public_detail']:
+            return [AllowAny()]
         else:
             return [IsAuthenticated(), IsAccountMember()]
     

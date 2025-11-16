@@ -82,26 +82,26 @@ export function useArticles() {
 
   const fetchArticles = (params?: ApiParams, _accountSlug?: string) => {
     // Articles are fetched from the root API endpoint, not account-scoped
-    const url = '/'
+    const url = '/api/'
     return fetchArticlesApi.execute(apiClient.get, url, { params })
   }
 
   const fetchArticle = (slug: string, accountSlug?: string) => {
-    const url = accountSlug ? `/${accountSlug}/detail/${slug}/` : `/detail/${slug}/`
+    const url = accountSlug ? `/api/${accountSlug}/detail/${slug}/` : `/api/detail/${slug}/`
     return fetchArticleApi.execute(apiClient.get, url)
   }
 
   const createArticle = (data: CreateData) =>
-    useApi().execute(apiClient.post, '/', data)
+    useApi().execute(apiClient.post, '/api/', data)
 
   const updateArticle = (slug: string, data: UpdateData) =>
-    useApi().execute(apiClient.put, `/detail/${slug}/`, data)
+    useApi().execute(apiClient.put, `/api/detail/${slug}/`, data)
 
   const deleteArticle = (slug: string) =>
-    useApi().execute(apiClient.delete, `/detail/${slug}/`)
+    useApi().execute(apiClient.delete, `/api/detail/${slug}/`)
 
   const publishArticle = (slug: string) =>
-    useApi().execute(apiClient.post, `/detail/${slug}/publish/`)
+    useApi().execute(apiClient.post, `/api/detail/${slug}/publish/`)
 
   return {
     // Separate loading states
@@ -134,23 +134,23 @@ export function useTopics() {
   const api = useApi()
 
   const fetchTopics = (params?: ApiParams, accountSlug?: string) => {
-    const url = accountSlug ? `/${accountSlug}/topics/` : '/topics/'
+    const url = accountSlug ? `/api/${accountSlug}/topics/` : '/api/topics/'
     return fetchTopicsApi.execute(apiClient.get, url, { params })
   }
 
   const fetchArticlesByTopic = (slug: string, params?: ApiParams, accountSlug?: string) => {
-    const url = accountSlug ? `/${accountSlug}/topics/${slug}/articles/` : `/topics/${slug}/articles/`
+    const url = accountSlug ? `/api/${accountSlug}/topics/${slug}/articles/` : `/api/topics/${slug}/articles/`
     return api.execute(apiClient.get, url, { params })
   }
 
   const createTopic = (data: CreateData) =>
-    api.execute(apiClient.post, '/topics/', data)
+    api.execute(apiClient.post, '/api/topics/', data)
 
   const updateTopic = (slug: string, data: UpdateData) =>
-    api.execute(apiClient.put, `/topics/${slug}/`, data)
+    api.execute(apiClient.put, `/api/topics/${slug}/`, data)
 
   const deleteTopic = (slug: string) =>
-    api.execute(apiClient.delete, `/topics/${slug}/`)
+    api.execute(apiClient.delete, `/api/topics/${slug}/`)
 
   return {
     ...api,
@@ -167,19 +167,19 @@ export function usePages() {
   const fetchPageApi = useApi<PageViewResponse>()
 
   const fetchPages = (params?: ApiParams) =>
-    fetchPagesApi.execute(apiClient.get, '/pages/', { params })
+    fetchPagesApi.execute(apiClient.get, '/api/pages/', { params })
 
   const fetchPage = (slug: string) =>
-    fetchPageApi.execute(apiClient.get, `/pages/${slug}/`)
+    fetchPageApi.execute(apiClient.get, `/api/pages/${slug}/`)
 
   const createPage = (data: CreateData) =>
-    useApi().execute(apiClient.post, '/pages/', data)
+    useApi().execute(apiClient.post, '/api/pages/', data)
 
   const updatePage = (slug: string, data: UpdateData) =>
-    useApi().execute(apiClient.put, `/pages/${slug}/`, data)
+    useApi().execute(apiClient.put, `/api/pages/${slug}/`, data)
 
   const deletePage = (slug: string) =>
-    useApi().execute(apiClient.delete, `/pages/${slug}/`)
+    useApi().execute(apiClient.delete, `/api/pages/${slug}/`)
 
   return {
     loading: fetchPagesApi.loading || fetchPageApi.loading,
@@ -197,18 +197,18 @@ export function useMedia() {
   const uploadMediaApi = useApi<MediaUploadResponse>()
 
   const fetchMedia = (params?: ApiParams) =>
-    fetchMediaApi.execute(apiClient.get, '/media/', { params })
+    fetchMediaApi.execute(apiClient.get, '/api/media/', { params })
 
   const uploadMedia = (formData: FormData) =>
-    uploadMediaApi.execute(apiClient.post, '/media/upload/', formData, {
+    uploadMediaApi.execute(apiClient.post, '/api/media/upload/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
 
   const deleteMedia = (id: string) =>
-    useApi().execute(apiClient.delete, `/media/${id}/`)
+    useApi().execute(apiClient.delete, `/api/media/${id}/`)
 
   const getMediaStats = () =>
-    useApi().execute(apiClient.get, '/media/stats/')
+    useApi().execute(apiClient.get, '/api/media/stats/')
 
   return {
     loading: fetchMediaApi.loading || uploadMediaApi.loading,
@@ -225,33 +225,33 @@ export function useNewsletter<T = unknown>() {
   const api = useApi<T>()
 
   const subscribe = (data: { email: string; first_name?: string; last_name?: string }) =>
-    api.execute(apiClient.post, '/newsletter/subscribers/subscribe/', data)
+    api.execute(apiClient.post, '/api/newsletter/subscribers/subscribe/', data)
 
   const unsubscribe = (data: { email: string }) =>
-    api.execute(apiClient.post, '/newsletter/subscribers/unsubscribe/', data)
+    api.execute(apiClient.post, '/api/newsletter/subscribers/unsubscribe/', data)
 
   const getSubscribers = (params?: ApiParams) =>
-    api.execute(apiClient.get, '/newsletter/subscribers/', { params })
+    api.execute(apiClient.get, '/api/newsletter/subscribers/', { params })
 
   const getSubscriberStats = () =>
-    api.execute(apiClient.get, '/newsletter/subscribers/stats/')
+    api.execute(apiClient.get, '/api/newsletter/subscribers/stats/')
 
   const importSubscribers = (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return api.execute(apiClient.post, '/newsletter/subscribers/import/', formData, {
+    return api.execute(apiClient.post, '/api/newsletter/subscribers/import/', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   }
 
   const exportSubscribers = (params?: ApiParams) =>
-    api.execute(apiClient.get, '/newsletter/subscribers/export/', { params })
+    api.execute(apiClient.get, '/api/newsletter/subscribers/export/', { params })
 
   const updateSubscriber = (id: string, data: Partial<{ is_active: boolean; first_name: string; last_name: string }>) =>
-    api.execute(apiClient.patch, `/newsletter/subscribers/${id}/`, data)
+    api.execute(apiClient.patch, `/api/newsletter/subscribers/${id}/`, data)
 
   const deleteSubscriber = (id: string) =>
-    api.execute(apiClient.delete, `/newsletter/subscribers/${id}/`)
+    api.execute(apiClient.delete, `/api/newsletter/subscribers/${id}/`)
 
   return {
     ...api,
@@ -270,28 +270,28 @@ export function useNewsletterCampaigns<T = unknown>() {
   const api = useApi<T>()
 
   const getCampaigns = (params?: ApiParams) =>
-    api.execute(apiClient.get, '/newsletter/campaigns/', { params })
+    api.execute(apiClient.get, '/api/newsletter/campaigns/', { params })
 
   const getCampaign = (id: string) =>
-    api.execute(apiClient.get, `/newsletter/campaigns/${id}/`)
+    api.execute(apiClient.get, `/api/newsletter/campaigns/${id}/`)
 
   const createCampaign = (data: CampaignData) =>
-    api.execute(apiClient.post, '/newsletter/campaigns/', data)
+    api.execute(apiClient.post, '/api/newsletter/campaigns/', data)
 
   const updateCampaign = (id: string, data: CampaignData) =>
-    api.execute(apiClient.put, `/newsletter/campaigns/${id}/`, data)
+    api.execute(apiClient.put, `/api/newsletter/campaigns/${id}/`, data)
 
   const deleteCampaign = (id: string) =>
-    api.execute(apiClient.delete, `/newsletter/campaigns/${id}/`)
+    api.execute(apiClient.delete, `/api/newsletter/campaigns/${id}/`)
 
   const sendCampaign = (id: string, data?: CampaignData) =>
-    api.execute(apiClient.post, `/newsletter/campaigns/${id}/send/`, data)
+    api.execute(apiClient.post, `/api/newsletter/campaigns/${id}/send/`, data)
 
   const getCampaignStats = (id: string) =>
-    api.execute(apiClient.get, `/newsletter/campaigns/${id}/stats/`)
+    api.execute(apiClient.get, `/api/newsletter/campaigns/${id}/stats/`)
 
   const scheduleCampaign = (id: string, scheduledAt: string) =>
-    api.execute(apiClient.post, `/newsletter/campaigns/${id}/schedule/`, { scheduled_at: scheduledAt })
+    api.execute(apiClient.post, `/api/newsletter/campaigns/${id}/schedule/`, { scheduled_at: scheduledAt })
 
   return {
     ...api,
@@ -310,22 +310,22 @@ export function useSeo<T = unknown>() {
   const api = useApi<T>()
 
   const getSeoAudit = () =>
-    api.execute(apiClient.get, '/seo/audit/')
+    api.execute(apiClient.get, '/api/seo/audit/')
 
   const optimizeArticle = (articleId: string) =>
-    api.execute(apiClient.post, `/articles/${articleId}/seo-optimize/`)
+    api.execute(apiClient.post, `/api/articles/${articleId}/seo-optimize/`)
 
   const getGlobalSettings = () =>
-    api.execute(apiClient.get, '/seo/settings/')
+    api.execute(apiClient.get, '/api/seo/settings/')
 
   const updateGlobalSettings = (data: SettingsData) =>
-    api.execute(apiClient.put, '/seo/settings/', data)
+    api.execute(apiClient.put, '/api/seo/settings/', data)
 
   const generateSitemap = () =>
-    api.execute(apiClient.post, '/seo/sitemap/generate/')
+    api.execute(apiClient.post, '/api/seo/sitemap/generate/')
 
   const updateRobotsTxt = (content: string) =>
-    api.execute(apiClient.post, '/seo/robots/', { content })
+    api.execute(apiClient.post, '/api/seo/robots/', { content })
 
   return {
     ...api,
@@ -343,19 +343,19 @@ export function useAnalytics() {
   const getArticleAnalyticsApi = useApi<unknown>()
 
   const getArticleAnalytics = (articleId?: string, params?: ApiParams) =>
-    getArticleAnalyticsApi.execute(apiClient.get, articleId ? `/analytics/articles/${articleId}/` : '/analytics/articles/', { params })
+    getArticleAnalyticsApi.execute(apiClient.get, articleId ? `/api/analytics/articles/${articleId}/` : '/api/analytics/articles/', { params })
 
   const getPageViewAnalytics = (params?: ApiParams) =>
-    getPageViewAnalyticsApi.execute(apiClient.get, '/analytics/pageviews/', { params })
+    getPageViewAnalyticsApi.execute(apiClient.get, '/api/analytics/pageviews/', { params })
 
   const getTrafficSources = (params?: ApiParams) =>
-    useApi().execute(apiClient.get, '/analytics/traffic-sources/', { params })
+    useApi().execute(apiClient.get, '/api/analytics/traffic-sources/', { params })
 
   const getUserEngagement = (params?: ApiParams) =>
-    useApi().execute(apiClient.get, '/analytics/engagement/', { params })
+    useApi().execute(apiClient.get, '/api/analytics/engagement/', { params })
 
   const exportAnalytics = (format: 'csv' | 'pdf', params?: ApiParams) =>
-    useApi().execute(apiClient.get, `/analytics/export/?format=${format}`, { params, responseType: 'blob' })
+    useApi().execute(apiClient.get, `/api/analytics/export/?format=${format}`, { params, responseType: 'blob' })
 
   return {
     loading: getPageViewAnalyticsApi.loading,
@@ -374,66 +374,66 @@ export function useBilling<T = unknown>() {
 
   // Core Subscription Management
   const getSubscriptionPlans = () =>
-    api.execute(apiClient.get, '/subscription-plans/')
+    api.execute(apiClient.get, '/api/subscription-plans/')
 
   const getAccountSubscription = (accountId: string) =>
-    api.execute(apiClient.get, `/accounts/${accountId}/subscription_status/`)
+    api.execute(apiClient.get, `/api/accounts/${accountId}/subscription_status/`)
 
   const getAccountBillingInfo = (accountId: string) =>
-    api.execute(apiClient.get, `/accounts/${accountId}/billing_info/`)
+    api.execute(apiClient.get, `/api/accounts/${accountId}/billing_info/`)
 
   const upgradeSubscriptionPlan = (accountId: string, planId: string, billingType: 'monthly' | 'yearly' = 'monthly') =>
-    api.execute(apiClient.post, `/accounts/${accountId}/upgrade_plan/`, {
+    api.execute(apiClient.post, `/api/accounts/${accountId}/upgrade_plan/`, {
       plan_id: planId,
       billing_type: billingType
     })
 
   // Subscription Lifecycle Management
   const cancelSubscription = (accountId: string, cancelImmediately: boolean = false) =>
-    api.execute(apiClient.post, `/accounts/${accountId}/cancel_subscription/`, {
+    api.execute(apiClient.post, `/api/accounts/${accountId}/cancel_subscription/`, {
       cancel_immediately: cancelImmediately
     })
 
   const reactivateSubscription = (accountId: string) =>
-    api.execute(apiClient.post, `/accounts/${accountId}/reactivate_subscription/`)
+    api.execute(apiClient.post, `/api/accounts/${accountId}/reactivate_subscription/`)
 
   const pauseSubscription = (accountId: string, reason?: string) =>
-    api.execute(apiClient.post, `/accounts/${accountId}/pause_subscription/`, { reason })
+    api.execute(apiClient.post, `/api/accounts/${accountId}/pause_subscription/`, { reason })
 
   const resumeSubscription = (accountId: string) =>
-    api.execute(apiClient.post, `/accounts/${accountId}/resume_subscription/`)
+    api.execute(apiClient.post, `/api/accounts/${accountId}/resume_subscription/`)
 
   // Invoice Management
   const getInvoices = (accountId: string, limit: number = 20) =>
-    api.execute(apiClient.get, `/accounts/${accountId}/invoices/`, { params: { limit } })
+    api.execute(apiClient.get, `/api/accounts/${accountId}/invoices/`, { params: { limit } })
 
   // Billing Analytics & Intelligence
   const getBillingAnalytics = (accountId: string) =>
-    api.execute(apiClient.get, `/accounts/${accountId}/billing_analytics/`)
+    api.execute(apiClient.get, `/api/accounts/${accountId}/billing_analytics/`)
 
   const getBillingAlerts = (accountId: string) =>
-    api.execute(apiClient.get, `/accounts/${accountId}/billing_alerts/`)
+    api.execute(apiClient.get, `/api/accounts/${accountId}/billing_alerts/`)
 
   // Payment Method Management
   const getPaymentMethods = (accountId: string) =>
-    api.execute(apiClient.get, `/accounts/${accountId}/payment_methods/`)
+    api.execute(apiClient.get, `/api/accounts/${accountId}/payment_methods/`)
 
   // Plan Change Intelligence
   const calculateProration = (accountId: string, planId: string, billingType: 'monthly' | 'yearly' = 'monthly') =>
-    api.execute(apiClient.post, `/accounts/${accountId}/calculate_proration/`, {
+    api.execute(apiClient.post, `/api/accounts/${accountId}/calculate_proration/`, {
       plan_id: planId,
       billing_type: billingType
     })
 
   // Promotional Features
   const applyCoupon = (accountId: string, couponCode: string) =>
-    api.execute(apiClient.post, `/accounts/${accountId}/apply_coupon/`, {
+    api.execute(apiClient.post, `/api/accounts/${accountId}/apply_coupon/`, {
       coupon_code: couponCode.trim().toUpperCase()
     })
 
   // Administrative Features
   const extendTrial = (accountId: string, days: number, reason?: string) =>
-    api.execute(apiClient.post, `/accounts/${accountId}/extend_trial/`, {
+    api.execute(apiClient.post, `/api/accounts/${accountId}/extend_trial/`, {
       days,
       reason
     })

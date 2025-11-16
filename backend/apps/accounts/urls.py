@@ -4,7 +4,7 @@ from .views import AccountViewSet, SubscriptionPlanViewSet
 from .webhooks import stripe_webhook
 
 router = DefaultRouter()
-router.register(r'accounts', AccountViewSet, basename='account')
+router.register(r'', AccountViewSet, basename='account')
 router.register(r'subscription-plans', SubscriptionPlanViewSet, basename='subscription-plan')
 
 app_name = 'accounts'
