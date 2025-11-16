@@ -87,6 +87,7 @@ export interface Article {
   topic: Topic | null
   hero_image: Media | null
   status: 'draft' | 'published'
+  is_published: boolean
   published_at: string | null
   word_count: number
   reading_time: number
@@ -100,6 +101,8 @@ export interface Page {
   title: string
   slug: string
   content: string
+  meta_description?: string
+  is_published: boolean
   created_at: string
   updated_at: string
 }

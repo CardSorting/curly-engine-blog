@@ -1,1 +1,402 @@
-<template><div><h1>ArticleEditView</h1><p>Coming soon...</p></div></template><script setup lang="ts"></script>
+<template>
+  <AdminLayout>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-900">Edit Article</h1>
+        <p class="mt-2 text-gray-600">Edit and update your blog post</p>
+      </div>
+
+      <!-- Loading State -->
+      <div v-if="loading" class="flex justify-center items-center h-64">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+
+      <!-- Article Form -->
+      <form v-else @submit.prevent="saveArticle" class="space-y-6">
+        <!-- Title -->
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700">
+            Title *
+          </label>
+          <Input
+            id="title"
+            v-model="form.title"
+            type="text"
+            placeholder="Enter article title"
+            :error-message="errors.title"
+            required
+            full-width
+            class="mt-1"
+          />
+        </div>
+
+        <!-- Slug -->
+        <div>
+          <label for="slug" class="block text-sm font-medium text-gray-700">
+            URL Slug
+          </label>
+          <Input
+            id="slug"
+            v-model="form.slug"
+            type="text"
+            placeholder="article-url-slug"
+            :error-message="errors.slug"
+            full-width
+            class="mt-1"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            Leave empty to generate automatically from title
+          </p>
+        </div>
+
+        <!-- Excerpt -->
+        <div>
+          <label for="excerpt" class="block text-sm font-medium text-gray-700">
+            Excerpt
+          </label>
+          <Input
+            id="excerpt"
+            v-model="form.excerpt"
+            type="text"
+            placeholder="Brief description of the article"
+            :error-message="errors.excerpt"
+            multiline
+            :rows="3"
+            full-width
+            class="mt-1"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            Short summary displayed in article listings (optional)
+          </p>
+        </div>
+
+        <!-- Content -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Content *
+          </label>
+          <MarkdownEditor
+            v-model="form.content"
+            placeholder="Write your article content in markdown..."
+          />
+          <p v-if="errors.content" class="mt-1 text-sm text-red-600">
+            {{ errors.content }}
+          </p>
+        </div>
+
+        <!-- Topic -->
+        <div>
+          <label for="topic" class="block text-sm font-medium text-gray-700">
+            Topic
+          </label>
+          <select
+            id="topic"
+            v-model="form.topic_id"
+            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+          >
+            <option value="">Select a topic</option>
+            <option v-for="topic in topics" :key="topic.id" :value="topic.id">
+              {{ topic.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Tags -->
+        <div>
+          <label for="tags" class="block text-sm font-medium text-gray-700">
+            Tags
+          </label>
+          <Input
+            id="tags"
+            v-model="tagsInput"
+            type="text"
+            placeholder="tag1, tag2, tag3"
+            :error-message="errors.tags"
+            full-width
+            class="mt-1"
+          />
+          <p class="mt-1 text-sm text-gray-500">
+            Comma-separated tags
+          </p>
+        </div>
+
+        <!-- Featured Image -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Featured Image
+          </label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6">
+            <div v-if="!form.featured_image" class="text-center">
+              <PhotoIcon class="mx-auto h-12 w-12 text-gray-400" />
+              <p class="mt-2 text-sm text-gray-600">
+                Click to upload or drag and drop
+              </p>
+              <p class="text-xs text-gray-500">
+                PNG, JPG, GIF up to 10MB
+              </p>
+            </div>
+            <div v-else class="flex items-center space-x-4">
+              <img
+                :src="form.featured_image"
+                alt="Featured image preview"
+                class="h-20 w-20 object-cover rounded"
+              />
+              <div>
+                <p class="text-sm font-medium text-gray-900">Featured image</p>
+                <button
+                  type="button"
+                  @click="form.featured_image = ''"
+                  class="text-sm text-red-600 hover:text-red-800"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleImageUpload"
+            />
+          </div>
+        </div>
+
+        <!-- Publishing Options -->
+        <div class="border-t pt-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  v-model="form.is_featured"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span class="ml-2 text-sm text-gray-700">Featured article</span>
+              </label>
+              
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  v-model="form.allow_comments"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span class="ml-2 text-sm text-gray-700">Allow comments</span>
+              </label>
+            </div>
+
+            <div class="flex items-center space-x-3">
+              <router-link
+                :to="{ name: 'admin-articles' }"
+                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Cancel
+              </router-link>
+              
+              <button
+                type="button"
+                @click="saveDraft"
+                :disabled="saving"
+                class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Save Draft
+              </button>
+              
+              <button
+                type="submit"
+                :disabled="saving || !form.title || !form.content"
+                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                {{ saving ? 'Updating...' : 'Update' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </AdminLayout>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import AdminLayout from '@/layouts/AdminLayout.vue'
+import MarkdownEditor from '@/components/editor/MarkdownEditor.vue'
+import { PhotoIcon } from '@heroicons/vue/24/outline'
+import { useArticles, useTopics } from '@/composables/useApi'
+import { type Topic, type Article } from '@/types/api'
+import Input from '@/components/ui/Input.vue'
+import { useNotification } from '@kyvg/vue3-notification'
+
+const route = useRoute()
+const router = useRouter()
+const { fetchArticle, updateArticle } = useArticles()
+const { fetchTopics } = useTopics()
+const { notify } = useNotification()
+
+const loading = ref(true)
+const saving = ref(false)
+const topics = ref<Topic[]>([])
+const tagsInput = ref('')
+const articleSlug = route.params.slug as string
+
+const form = ref({
+  title: '',
+  slug: '',
+  excerpt: '',
+  content: '',
+  topic_id: '',
+  tags: [] as string[],
+  featured_image: '',
+  is_featured: false,
+  allow_comments: true,
+  status: 'published' as 'draft' | 'published'
+})
+
+const errors = ref<Record<string, string>>({})
+
+onMounted(async () => {
+  await Promise.all([
+    loadArticle(),
+    loadTopics()
+  ])
+})
+
+const loadArticle = async () => {
+  try {
+    const article = await fetchArticle(articleSlug)
+    if (article) {
+      form.value = {
+        title: article.title || '',
+        slug: article.slug || '',
+        excerpt: article.excerpt || '',
+        content: article.content || '',
+        topic_id: article.topic?.id || '',
+        tags: article.tags || [],
+        featured_image: article.featured_image || '',
+        is_featured: article.is_featured || false,
+        allow_comments: article.allow_comments !== false,
+        status: article.status || 'draft'
+      }
+      
+      // Convert tags array to comma-separated string
+      tagsInput.value = form.value.tags.join(', ')
+    }
+  } catch (error) {
+    console.error('Failed to load article:', error)
+    notify({
+      title: 'Error',
+      text: 'Failed to load article',
+      type: 'error'
+    })
+    router.push({ name: 'admin-articles' })
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadTopics = async () => {
+  try {
+    const response = await fetchTopics()
+    if (response && response.results) {
+      topics.value = response.results
+    }
+  } catch (err) {
+    console.error('Failed to load topics:', err)
+  }
+}
+
+const generateSlug = (title: string) => {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9 -]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+}
+
+// Auto-generate slug from title
+const handleTitleChange = () => {
+  if (!form.value.slug && form.value.title) {
+    form.value.slug = generateSlug(form.value.title)
+  }
+}
+
+const handleImageUpload = (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (file) {
+    // In a real implementation, you would upload to a server
+    // For now, we'll use a placeholder URL
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      form.value.featured_image = e.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const validateForm = () => {
+  errors.value = {}
+  
+  if (!form.value.title) {
+    errors.value.title = 'Title is required'
+  }
+  
+  if (!form.value.content) {
+    errors.value.content = 'Content is required'
+  }
+  
+  return Object.keys(errors.value).length === 0
+}
+
+const saveDraft = async () => {
+  form.value.status = 'draft'
+  await saveArticle()
+}
+
+const saveArticle = async () => {
+  if (!validateForm()) {
+    return
+  }
+  
+  saving.value = true
+  
+  try {
+    // Parse tags from input
+    form.value.tags = tagsInput.value
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
+    
+    const articleData = {
+      ...form.value,
+      published_at: form.value.status === 'published' ? new Date().toISOString() : null
+    }
+    
+    const response = await updateArticle(articleSlug, articleData)
+    
+    if (response) {
+      notify({
+        title: 'Success',
+        text: form.value.status === 'published' ? 'Article updated and published!' : 'Draft updated successfully!',
+        type: 'success'
+      })
+      
+      router.push({ name: 'admin-articles' })
+    }
+  } catch (error: any) {
+    console.error('Failed to update article:', error)
+    
+    notify({
+      title: 'Error',
+      text: error.message || 'Failed to update article',
+      type: 'error'
+    })
+  } finally {
+    saving.value = false
+  }
+}
+
+// Watch title changes to auto-generate slug
+const title = computed(() => form.value.title)
+watch(title, handleTitleChange)
+</script>

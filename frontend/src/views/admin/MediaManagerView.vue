@@ -1,25 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-white shadow-sm border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="py-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900">Media Library</h1>
-              <p class="mt-1 text-sm text-gray-500">Upload and manage your media files</p>
-            </div>
-            <div class="flex items-center space-x-3">
-              <Button @click="openUploadModal" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
-                <CloudArrowUpIcon class="w-5 h-5 mr-2" />
-                Upload Files
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <AdminLayout>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Filters -->
       <div class="bg-white shadow rounded-lg mb-6">
@@ -217,11 +197,12 @@
         </div>
       </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 import {
   CloudArrowUpIcon,
   PhotoIcon,

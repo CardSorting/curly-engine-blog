@@ -99,10 +99,22 @@ export function useTopics<T = any>() {
   const fetchArticlesByTopic = (slug: string, params?: Record<string, any>) =>
     api.execute(apiClient.get, `/topics/${slug}/articles/`, { params })
 
+  const createTopic = (data: any) =>
+    api.execute(apiClient.post, '/topics/', data)
+
+  const updateTopic = (slug: string, data: any) =>
+    api.execute(apiClient.put, `/topics/${slug}/`, data)
+
+  const deleteTopic = (slug: string) =>
+    api.execute(apiClient.delete, `/topics/${slug}/`)
+
   return {
     ...api,
     fetchTopics,
     fetchArticlesByTopic,
+    createTopic,
+    updateTopic,
+    deleteTopic,
   }
 }
 
@@ -115,10 +127,22 @@ export function usePages<T = any>() {
   const fetchPage = (slug: string) =>
     api.execute(apiClient.get, `/pages/${slug}/`)
 
+  const createPage = (data: any) =>
+    api.execute(apiClient.post, '/pages/', data)
+
+  const updatePage = (slug: string, data: any) =>
+    api.execute(apiClient.put, `/pages/${slug}/`, data)
+
+  const deletePage = (slug: string) =>
+    api.execute(apiClient.delete, `/pages/${slug}/`)
+
   return {
     ...api,
     fetchPages,
     fetchPage,
+    createPage,
+    updatePage,
+    deletePage,
   }
 }
 

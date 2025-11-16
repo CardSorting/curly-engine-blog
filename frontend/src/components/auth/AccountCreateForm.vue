@@ -65,7 +65,7 @@
           placeholder="A blog about..."
           :error-message="errors.description"
           multiline
-          rows="3"
+          :rows="3"
           full-width
           class="mt-1"
         />

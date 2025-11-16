@@ -1,28 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <div class="bg-white shadow-sm border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="py-6">
-          <div class="flex items-center justify-between">
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900">Articles</h1>
-              <p class="mt-1 text-sm text-gray-500">Manage your blog articles</p>
-            </div>
-            <div class="flex items-center space-x-3">
-              <router-link
-                :to="{ name: 'admin-article-create' }"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <PlusIcon class="w-5 h-5 mr-2" />
-                New Article
-              </router-link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <AdminLayout>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Filters -->
       <div class="bg-white shadow rounded-lg mb-6">
@@ -87,7 +64,7 @@
       <!-- Error State -->
       <div v-else-if="error" class="text-center py-12">
         <p class="text-red-600">{{ error }}</p>
-        <Button @click="loadArticles" class="mt-4">
+        <Button @click="loadArticles()" class="mt-4">
           Try Again
         </Button>
       </div>
@@ -124,7 +101,7 @@
                 </div>
                 <div class="flex items-center space-x-4">
                   <router-link
-                    :to="{ name: 'admin-article-edit', params: { articleId: article.id } }"
+                    :to="{ name: 'admin-article-edit', params: { articleSlug: article.slug } }"
                     class="text-blue-600 hover:text-blue-900 text-sm font-medium"
                   >
                     Edit
@@ -188,12 +165,13 @@
         </div>
       </div>
     </div>
-  </div>
+  </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import AdminLayout from '@/layouts/AdminLayout.vue'
 import { DocumentTextIcon, PlusIcon } from '@heroicons/vue/24/outline'
 import { useArticles, useTopics } from '@/composables/useApi'
 import { type Article, type Topic, type PaginatedResponse } from '@/types/api'
@@ -307,6 +285,14 @@ const clearFilters = () => {
   statusFilter.value = ''
   topicFilter.value = ''
   searchQuery.value = ''
+  loadArticles()
+}
+
+const onStatusFilterChange = () => {
+  loadArticles()
+}
+
+const onTopicFilterChange = () => {
   loadArticles()
 }
 

@@ -22,6 +22,11 @@ const MediaManagerView = () => import('@/views/admin/MediaManagerView.vue')
 const UserManagementView = () => import('@/views/admin/UserManagementView.vue')
 const SettingsView = () => import('@/views/admin/SettingsView.vue')
 
+// Placeholder components for routes not yet implemented
+const TopicsView = () => import('@/views/admin/TopicsView.vue')
+const PagesView = () => import('@/views/admin/PagesView.vue')
+const AnalyticsView = () => import('@/views/admin/AnalyticsView.vue')
+
 // Route guards
 const requireAuth = (to: any, from: any, next: any) => {
   const authStore = useAuthStore()
@@ -149,7 +154,7 @@ const routes: RouteRecordRaw[] = [
     beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
   },
   {
-    path: '/:accountSlug/admin/articles/:articleId/edit',
+    path: '/:accountSlug/admin/articles/:articleSlug/edit',
     name: 'admin-article-edit',
     component: ArticleEditView,
     meta: { requiresAuth: true, requiresTenant: true, layout: 'admin' },
@@ -174,6 +179,27 @@ const routes: RouteRecordRaw[] = [
     name: 'admin-settings',
     component: SettingsView,
     meta: { requiresAuth: true, requiresTenant: true, layout: 'admin' },
+    beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
+  },
+  {
+    path: '/:accountSlug/admin/topics',
+    name: 'admin-topics',
+    component: TopicsView,
+    meta: { requiresAuth: true, requiresTenant: true, layout: 'admin', title: 'Topics' },
+    beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
+  },
+  {
+    path: '/:accountSlug/admin/pages',
+    name: 'admin-pages',
+    component: PagesView,
+    meta: { requiresAuth: true, requiresTenant: true, layout: 'admin', title: 'Pages' },
+    beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
+  },
+  {
+    path: '/:accountSlug/admin/analytics',
+    name: 'admin-analytics',
+    component: AnalyticsView,
+    meta: { requiresAuth: true, requiresTenant: true, layout: 'admin', title: 'Analytics' },
     beforeEnter: [requireAuth, requireTenant, checkAccountFromRoute]
   },
 
