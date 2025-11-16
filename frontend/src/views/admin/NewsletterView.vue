@@ -318,6 +318,164 @@
         </form>
       </Modal>
 
+      <!-- Edit Campaign Modal -->
+      <Modal
+        :show="!!editingCampaign"
+        @close="closeEditModal"
+        title="Edit Campaign"
+        size="lg"
+      >
+        <form v-if="editingCampaign" @submit.prevent="updateCampaign">
+          <div class="space-y-6">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Campaign Name</label>
+              <input
+                v-model="editingCampaign.name"
+                type="text"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Subject Line</label>
+              <input
+                v-model="editingCampaign.subject"
+                type="text"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                required
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Content</label>
+              <textarea
+                v-model="editingCampaign.content"
+                rows="8"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Write your newsletter content here..."
+                required
+              ></textarea>
+            </div>
+
+            <div v-if="editingCampaign.status === 'draft'">
+              <label class="block text-sm font-medium text-gray-700">Send Options</label>
+              <div class="mt-2 space-y-2">
+                <label class="inline-flex items-center">
+                  <input
+                    v-model="editSendOption"
+                    type="radio"
+                    value="draft"
+                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <span class="ml-2">Keep as draft</span>
+                </label>
+                <label class="inline-flex items-center ml-6">
+                  <input
+                    v-model="editSendOption"
+                    type="radio"
+                    value="now"
+                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <span class="ml-2">Send immediately</span>
+                </label>
+                <label class="inline-flex items-center ml-6" v-if="editSendOption !== 'now'">
+                  <input
+                    v-model="editSendOption"
+                    type="radio"
+                    value="schedule"
+                    class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <span class="ml-2">Schedule for later</span>
+                </label>
+              </div>
+            </div>
+
+            <div v-if="editSendOption === 'schedule'">
+              <label class="block text-sm font-medium text-gray-700">Schedule Date & Time</label>
+              <input
+                v-model="editScheduledAt"
+                type="datetime-local"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+          </div>
+
+          <div class="mt-6 flex justify-end space-x-3">
+            <Button type="button" @click="closeEditModal" variant="outline">
+              Cancel
+            </Button>
+            <Button type="submit" :loading="updatingCampaign">
+              Update Campaign
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <!-- View Campaign Modal -->
+      <Modal
+        :show="!!selectedCampaign"
+        @close="selectedCampaign = null"
+        :title="selectedCampaign?.subject || 'Campaign Details'"
+        size="lg"
+      >
+        <div v-if="selectedCampaign" class="space-y-6">
+          <div class="border-b border-gray-200 pb-4">
+            <div class="flex items-center space-x-3">
+              <h3 class="text-lg font-medium text-gray-900">{{ selectedCampaign.subject }}</h3>
+              <span
+                :class="[
+                  'inline-flex rounded-full px-2 text-xs font-semibold leading-5',
+                  getCampaignStatusClass(selectedCampaign.status)
+                ]"
+              >
+                {{ selectedCampaign.status }}
+              </span>
+            </div>
+            <p class="mt-2 text-sm text-gray-600">Created {{ new Date(selectedCampaign.created_at).toLocaleDateString() }}</p>
+          </div>
+
+          <div>
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Content</h4>
+            <div class="bg-gray-50 rounded-lg p-4 whitespace-pre-wrap text-sm text-gray-900 max-h-40 overflow-y-auto">
+              {{ selectedCampaign.content }}
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Campaign Statistics</h4>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <span class="text-sm text-gray-500">Recipients:</span>
+                <span class="ml-2 font-medium">{{ selectedCampaign.recipients }}</span>
+              </div>
+              <div>
+                <span class="text-sm text-gray-500">Status:</span>
+                <span class="ml-2 font-medium">{{ selectedCampaign.status }}</span>
+              </div>
+              <div>
+                <span class="text-sm text-gray-500">Sent:</span>
+                <span class="ml-2 font-medium">
+                  {{ selectedCampaign.sent_at ? new Date(selectedCampaign.sent_at).toLocaleDateString() : 'Not sent' }}
+                </span>
+              </div>
+              <div v-if="selectedCampaign.scheduled_at">
+                <span class="text-sm text-gray-500">Scheduled:</span>
+                <span class="ml-2 font-medium">{{ new Date(selectedCampaign.scheduled_at).toLocaleDateString() }}</span>
+              </div>
+              <div>
+                <span class="text-sm text-gray-500">Open Rate:</span>
+                <span class="ml-2 font-medium">{{ selectedCampaign.open_rate || 0 }}%</span>
+              </div>
+              <div>
+                <span class="text-sm text-gray-500">Click Rate:</span>
+                <span class="ml-2 font-medium">{{ selectedCampaign.click_rate || 0 }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
       <!-- Import Subscribers Modal -->
       <Modal
         :show="showImportModal"
@@ -395,7 +553,7 @@ import {
 } from '@heroicons/vue/24/outline'
 
 const { getSubscribers, getSubscriberStats, importSubscribers: apiImportSubscribers, exportSubscribers: apiExportSubscribers, updateSubscriber, deleteSubscriber } = useNewsletter()
-const { getCampaigns, getCampaign, createCampaign: apiCreateCampaign, updateCampaign, deleteCampaign, sendCampaign: apiSendCampaign, scheduleCampaign } = useNewsletterCampaigns()
+const { getCampaigns, getCampaign, createCampaign: apiCreateCampaign, updateCampaign: apiUpdateCampaign, deleteCampaign, sendCampaign: apiSendCampaign, scheduleCampaign } = useNewsletterCampaigns()
 
 // Stats
 const stats = ref({
@@ -425,7 +583,12 @@ const showCreateModal = ref(false)
 const showImportModal = ref(false)
 const creatingCampaign = ref(false)
 const importing = ref(false)
+const updatingCampaign = ref(false)
 const importFile = ref<File | null>(null)
+const selectedCampaign = ref<NewsletterCampaign | null>(null)
+const editingCampaign = ref<NewsletterCampaign | null>(null)
+const editSendOption = ref('draft')
+const editScheduledAt = ref('')
 
 // New Campaign Form
 const newCampaign = ref({
@@ -500,12 +663,62 @@ const resetCampaignForm = () => {
   }
 }
 
-const viewCampaign = (campaign: any) => {
-  console.log('View campaign:', campaign)
+const viewCampaign = (campaign: NewsletterCampaign) => {
+  selectedCampaign.value = campaign
 }
 
-const editCampaign = (campaign: any) => {
-  console.log('Edit campaign:', campaign)
+const editCampaign = (campaign: NewsletterCampaign) => {
+  editingCampaign.value = { ...campaign }
+  editSendOption.value = campaign.status === 'draft' ? 'draft' : 'draft'
+  editScheduledAt.value = campaign.scheduled_at || ''
+}
+
+const closeEditModal = () => {
+  editingCampaign.value = null
+  editSendOption.value = 'draft'
+  editScheduledAt.value = ''
+}
+
+const updateCampaign = async () => {
+  if (!editingCampaign.value) return
+
+  updatingCampaign.value = true
+  try {
+    const campaignData = {
+      name: editingCampaign.value.name,
+      subject: editingCampaign.value.subject,
+      content: editingCampaign.value.content,
+    }
+
+    // Update the campaign via API
+    await apiUpdateCampaign(editingCampaign.value.id, campaignData)
+
+    // Handle send options
+    if (editSendOption.value === 'now') {
+      await apiSendCampaign(editingCampaign.value.id)
+    } else if (editSendOption.value === 'schedule' && editScheduledAt.value) {
+      await scheduleCampaign(editingCampaign.value.id, editScheduledAt.value)
+    }
+
+    // Reload campaigns list
+    await loadInitialData()
+
+    notify({
+      title: 'Success',
+      text: `Campaign "${editingCampaign.value.name}" updated successfully!`,
+      type: 'success',
+    })
+
+    closeEditModal()
+  } catch (error) {
+    notify({
+      title: 'Error',
+      text: 'Failed to update campaign',
+      type: 'error',
+    })
+  } finally {
+    updatingCampaign.value = false
+  }
 }
 
 const sendCampaign = async (campaign: NewsletterCampaign) => {
