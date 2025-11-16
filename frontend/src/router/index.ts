@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useTenantStore } from '@/stores/tenant'
 
 // Lazy-loaded components
 const LoginView = () => import('@/views/auth/LoginView.vue')
@@ -29,47 +27,56 @@ const SeoView = () => import('@/views/admin/SeoView.vue')
 const AnalyticsView = () => import('@/views/admin/AnalyticsView.vue')
 const NewsletterView = () => import('@/views/admin/NewsletterView.vue')
 
-// Route guards
+// Route guards - import stores inside functions to avoid initialization order issues
 const requireAuth = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
+  import('@/stores/auth').then(({ useAuthStore }) => {
+    const authStore = useAuthStore()
 
-  if (!authStore.isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
-  } else {
-    next()
-  }
+    if (!authStore.isAuthenticated) {
+      next({ name: 'login', query: { redirect: to.fullPath } })
+    } else {
+      next()
+    }
+  })
 }
 
 const requireTenant = (to: any, from: any, next: any) => {
-  const authStore = useAuthStore()
-  const tenantStore = useTenantStore()
+  Promise.all([
+    import('@/stores/auth'),
+    import('@/stores/tenant')
+  ]).then(([{ useAuthStore }, { useTenantStore }]) => {
+    const authStore = useAuthStore()
+    const tenantStore = useTenantStore()
 
-  if (!authStore.isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
-    return
-  }
+    if (!authStore.isAuthenticated) {
+      next({ name: 'login', query: { redirect: to.fullPath } })
+      return
+    }
 
-  if (!tenantStore.currentAccount) {
-    next({ name: 'account-select' })
-    return
-  }
+    if (!tenantStore.currentAccount) {
+      next({ name: 'account-select' })
+      return
+    }
 
-  next()
+    next()
+  })
 }
 
 const checkAccountFromRoute = (to: any, from: any, next: any) => {
-  const tenantStore = useTenantStore()
-  const accountSlug = to.params.accountSlug as string
+  import('@/stores/tenant').then(({ useTenantStore }) => {
+    const tenantStore = useTenantStore()
+    const accountSlug = to.params.accountSlug as string
 
-  if (accountSlug && tenantStore.currentAccount?.slug !== accountSlug) {
-    // Try to switch to this account if user has access
-    const availableAccount = tenantStore.userAccounts.find(acc => acc.slug === accountSlug)
-    if (availableAccount) {
-      tenantStore.setCurrentAccount(availableAccount)
+    if (accountSlug && tenantStore.currentAccount?.slug !== accountSlug) {
+      // Try to switch to this account if user has access
+      const availableAccount = tenantStore.userAccounts.find(acc => acc.slug === accountSlug)
+      if (availableAccount) {
+        tenantStore.setCurrentAccount(availableAccount)
+      }
     }
-  }
 
-  next()
+    next()
+  })
 }
 
 const routes: RouteRecordRaw[] = [
@@ -222,13 +229,7 @@ const routes: RouteRecordRaw[] = [
   // Legacy redirects (for backward compatibility)
   {
     path: '/admin',
-    redirect: (to) => {
-      const tenantStore = useTenantStore()
-      if (tenantStore.currentAccount) {
-        return { name: 'admin-dashboard' }
-      }
-      return { name: 'account-select' }
-    }
+    redirect: { name: 'account-select' }
   }
 ]
 
@@ -244,28 +245,30 @@ const router = createRouter({
   },
 })
 
-// Global navigation guard
-router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
+import('@/stores/auth').then(({ useAuthStore }) => {
+  // Global navigation guard
+  router.beforeEach((to, from, next) => {
+    const authStore = useAuthStore()
 
-  // Set page meta information
-  if (to.meta.title) {
-    document.title = `${to.meta.title} | ${import.meta.env.VITE_APP_NAME || 'Chronicle'}`
-  }
+    // Set page meta information
+    if (to.meta.title) {
+      document.title = `${to.meta.title} | ${import.meta.env.VITE_APP_NAME || 'Chronicle'}`
+    }
 
-  // Handle authentication requirements
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
-    return
-  }
+    // Handle authentication requirements
+    if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+      next({ name: 'login', query: { redirect: to.fullPath } })
+      return
+    }
 
-  // Prevent authenticated users from accessing auth pages
-  if (!to.meta.requiresAuth && authStore.isAuthenticated && to.name === 'login') {
-    next({ name: 'blog-home' })
-    return
-  }
+    // Prevent authenticated users from accessing auth pages
+    if (!to.meta.requiresAuth && authStore.isAuthenticated && to.name === 'login') {
+      next({ name: 'blog-home' })
+      return
+    }
 
-  next()
+    next()
+  })
 })
 
 export default router
