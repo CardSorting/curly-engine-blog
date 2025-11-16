@@ -121,12 +121,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 8,
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+    {
+        'NAME': 'apps.users.validators.CustomPasswordValidator',
     },
 ]
 
@@ -189,7 +195,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 RESEND_API_KEY = config('RESEND_API_KEY', default='')
 FROM_EMAIL = config('FROM_EMAIL', default='noreply@example.com')
 
-# Site URL (for email links)
+# Site URL (for email links) - Used for email verification links
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 SITE_URL = config('SITE_URL', default='http://localhost:3000')
 
 # Internationalization
@@ -234,6 +241,37 @@ SPECTACULAR_SETTINGS = {
         {'name': 'SEO', 'description': 'Search engine optimization'},
     ],
 }
+
+# Cache configuration for rate limiting (production ready)
+CACHE_BACKEND = config('CACHE_BACKEND', default='locmem://')
+if CACHE_BACKEND.startswith('redis://') or CACHE_BACKEND.startswith('rediss://'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': CACHE_BACKEND,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            }
+        }
+    }
+elif CACHE_BACKEND.startswith('memcached://'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            'LOCATION': CACHE_BACKEND,
+        }
+    }
+else:
+    # Default to locmem for development/local testing
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        }
+    }
+
+# Session configuration
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'default'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

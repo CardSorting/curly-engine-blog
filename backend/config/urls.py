@@ -17,13 +17,14 @@ urlpatterns = [
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
     # API endpoints
-    path('api/auth/', include('apps.users.urls')),
+    path('api/auth/', include('apps.users.urls_auth')),
     path('api/accounts/', include('apps.accounts.urls')),
     path('api/', include('apps.articles.urls')),
     path('api/media/', include('apps.media.urls')),
     path('api/newsletter/', include('apps.newsletter.urls')),
     path('api/analytics/', include('apps.analytics.urls')),
     path('api/seo/', include('apps.seo.urls')),
+    path('api/register/', include('apps.users.urls_register')),
 ]
 
 # Serve media files during development

@@ -1,0 +1,22 @@
+Verify Your Email Address - Curly Engine Blog
+
+Hello {{ user.first_name|default:user.username }},
+
+Welcome to Curly Engine Blog! To protect your account security and ensure we have the right email address, we need to verify that it's really you.
+
+Please visit the following link to verify your email address and activate your account:
+
+{{ verification_url }}
+
+SECURITY NOTICE: This link will expire in 24 hours for your security. If you didn't create an account, you can safely ignore this email.
+
+Once verified, you'll be able to sign in to your account and start creating amazing content with Curly Engine Blog.
+
+If you have any questions, feel free to reply to this email. We're here to help!
+
+Best regards,
+The Curly Engine Blog Team
+
+---
+This email was sent to {{ user.email }}. If you didn't request this, please ignore this email.
+Curly Engine Blog - Professional Blogging Platform

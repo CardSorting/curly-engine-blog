@@ -1,0 +1,123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - Curly Engine Blog</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #6b7280;
+            font-size: 16px;
+        }
+        .button {
+            display: inline-block;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 30px 0;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background: #1d4ed8;
+        }
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+            text-align: center;
+        }
+        .security-note {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .link-fallback {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Curly Engine Blog</div>
+            <h1 class="title">Verify Your Email Address</h1>
+            <p class="subtitle">Click the button below to verify your email and activate your account.</p>
+        </div>
+
+        <p>Hello {{ user.first_name|default:user.username }},</p>
+
+        <p>Welcome to Curly Engine Blog! To protect your account security and ensure we have the right email address, we need to verify that it's really you.</p>
+
+        <p>Please click the button below to verify your email address and activate your account:</p>
+
+        <div style="text-align: center;">
+            <a href="{{ verification_url }}" class="button">Verify Email Address</a>
+        </div>
+
+        <div class="security-note">
+            <strong>Security Notice:</strong> This link will expire in 24 hours for your security. If you didn't create an account, you can safely ignore this email.
+        </div>
+
+        <div class="link-fallback">
+            <strong>If the button doesn't work,</strong> copy and paste this link into your browser:<br>
+            {{ verification_url }}
+        </div>
+
+        <p>Once verified, you'll be able to sign in to your account and start creating amazing content with Curly Engine Blog.</p>
+
+        <p>If you have any questions, feel free to reply to this email. We're here to help!</p>
+
+        <p>Best regards,<br>
+        The Curly Engine Blog Team</p>
+
+        <div class="footer">
+            <p>This email was sent to {{ user.email }}. If you didn't request this, please ignore this email.</p>
+        </div>
+    </div>
+</body>
+</html>
