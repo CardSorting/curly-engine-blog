@@ -299,7 +299,7 @@ import { useNotification } from '@kyvg/vue3-notification'
 
 const router = useRouter()
 const { createArticle } = useArticles()
-const { fetchTopics } = useTopics<PaginatedResponse<Topic>>()
+const { fetchTopics } = useTopics()
 const { notify } = useNotification()
 
 const saving = ref(false)

@@ -156,6 +156,7 @@ async function handleNavigationRequest(request) {
     const response = await fetch(request)
     return response
   } catch (error) {
+    void error
     // Serve offline fallback for navigation requests
     const cache = await caches.open(STATIC_CACHE)
     const fallbackResponse = await cache.match('/')
@@ -286,6 +287,7 @@ async function doBackgroundSync() {
           await cache.delete(request)
         }
       } catch (error) {
+        void error
         console.log('[SW] Background sync failed for:', request.url)
       }
     })

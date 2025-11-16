@@ -275,7 +275,8 @@ onMounted(async () => {
 const loadPages = async () => {
   try {
     const response = await fetchPages()
-    pages.value = response?.results || response || []
+    // Fix: Ensure we always assign an array of pages
+    pages.value = response?.results || []
   } catch (error) {
     console.error('Failed to load pages:', error)
   } finally {

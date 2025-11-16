@@ -21,7 +21,7 @@
                 class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Topics</option>
-                <option v-for="topic in (topics || [])" :key="topic?.id" :value="topic?.slug">
+                <option v-for="topic in (topics?.results || [])" :key="topic?.id" :value="topic?.slug">
                   {{ topic?.name }}
                 </option>
               </select>
@@ -67,12 +67,12 @@
         </Button>
       </div>
 
-      <div v-else-if="articles?.length" class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+      <div v-else-if="articles?.results?.length" class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         <Card
-          v-for="article in articles"
+          v-for="article in (articles.results || [])"
           :key="article.id"
           :title="article.title"
-          :subtitle="`By ${article.author_name} • ${formatDate(article.published_at)}`"
+          :subtitle="`By ${article.author.username} • ${formatDate(article.published_at)}`"
           :content="article.excerpt"
           clickable
           class="h-full"
@@ -105,32 +105,18 @@ import { useRouter } from 'vue-router'
 import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { useArticles, useTopics } from '@/composables/useApi'
 import { useTenantStore } from '@/stores/tenant'
-// Import types as needed
+import type { Topic, PaginatedResponse, TopicResponse, Article } from '@/types/api'
 
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
-interface Article {
-  id: string
-  title: string
-  slug: string
-  excerpt: string
-  published_at: string | null
-  author_name: string
-}
-
-interface Topic {
-  id: string
-  slug: string
-  name: string
-  color?: string
-}
+// Fix: Import proper types from API types
 
 const router = useRouter()
 const tenantStore = useTenantStore()
-const { data: articles, loading, error, fetchArticles } = useArticles<Article[]>()
-const { data: topics, fetchTopics } = useTopics<Topic[]>()
+const { data: articles, loading, error, fetchArticles } = useArticles()
+const { data: topics, fetchTopics } = useTopics() as any
 
 const appName = ref(import.meta.env.VITE_APP_NAME || 'Chronicle')
 const selectedTopic = ref('')
@@ -148,7 +134,10 @@ const loadArticles = async (params?: Record<string, unknown>) => {
 }
 
 const loadTopics = async () => {
-  await fetchTopics({}, tenantStore.accountSlug || undefined)
+  const response = await fetchTopics({}, tenantStore.accountSlug || undefined)
+  if (response && response.results) {
+    topics.value = response
+  }
 }
 
 const onTopicChange = () => {

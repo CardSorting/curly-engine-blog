@@ -71,7 +71,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/tenant'
-import { type Account } from '@/types/api'
+import { type Account, type SubscriptionPlan } from '@/types/api'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 import { Plus as PlusIcon } from 'lucide-vue-next'
@@ -107,7 +107,7 @@ const createNewAccount = () => {
   router.push('/account-create')
 }
 
-const formatPlan = (plan: any) => {
+const formatPlan = (plan: SubscriptionPlan | null) => {
   if (!plan) return 'Free Plan'
   return plan.name || 'Plan'
 }

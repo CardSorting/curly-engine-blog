@@ -243,7 +243,6 @@ import EngagementChart from '@/components/charts/EngagementChart.vue'
 import { useArticles, useAnalytics } from '@/composables/useApi'
 import type { Article } from '@/types/api'
 import {
-  ChartBarIcon,
   EyeIcon,
   DocumentTextIcon,
   UsersIcon,
@@ -255,7 +254,6 @@ import {
 const { fetchArticles } = useArticles()
 const {
   getPageViewAnalytics,
-  getArticleAnalytics,
   getUserEngagement,
   exportAnalytics
 } = useAnalytics()
@@ -299,7 +297,7 @@ const stats = computed(() => {
 })
 
 const recentArticles = computed(() => {
-  return articles.value
+  return [...articles.value]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 10)
 })

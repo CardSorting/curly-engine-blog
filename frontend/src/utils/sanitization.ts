@@ -46,12 +46,12 @@ const htmlEntitiesReverse: Record<string, string> = {
 const patterns = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   url: /^https?:\/\/(?:[-\w.])+(?:[:\d]+)?(?:\/(?:[\w._~:/?#[\]@!$&'()*+,;=-]|%[\da-f]{2})*)?$/i,
-  phone: /^\+?[\d\s\-\(\)]{10,}$/,
+  phone: /^\+?[\d\s\-()]{10,}$/,
   slug: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
   username: /^[a-zA-Z0-9_]{3,30}$/,
   sqlInjection: /(\bUNION\b|\bSELECT\b|\bINSERT\b|\bDELETE\b|\bUPDATE\b|\bDROP\b|\bCREATE\b|\bALTER\b|\bEXEC\b|\bEXECUTE\b).*?(\bor\b|\band\b).*?(\d+\s*=\s*\d+)/i,
   xss: /<script[^>]*>.*?<\/script>|<iframe[^>]*>.*?<\/iframe>|<object[^>]*>.*?<\/object>/gi,
-  pathTraversal: /\.\.[\/\\]/,
+  pathTraversal: /\.\.[/\\]/,
 }
 
 /**

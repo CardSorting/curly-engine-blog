@@ -81,10 +81,6 @@ import { useTheme } from '@/composables/useTheme'
 const { theme, setTheme, toggleTheme } = useTheme()
 const showDropdown = ref(false)
 
-const toggleDropdown = () => {
-  showDropdown.value = !showDropdown.value
-}
-
 const closeDropdown = () => {
   showDropdown.value = false
 }

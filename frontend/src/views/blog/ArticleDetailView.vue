@@ -133,7 +133,7 @@ const appName = ref(import.meta.env.VITE_APP_NAME || 'Chronicle')
 const articleSlug = computed(() => route.params.articleSlug as string)
 const accountSlug = computed(() => route.params.accountSlug as string)
 
-const { data: article, loading, error, fetchArticle } = useArticles<Article>()
+const { articleData: article, loadingArticle: loading, errorArticle: error, fetchArticle } = useArticles()
 
 // Format date for display
 const formatDate = (dateString: string) => {

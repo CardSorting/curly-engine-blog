@@ -144,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
@@ -247,12 +247,13 @@ const handleSubmit = async () => {
 
     // Registration successful - redirect to login or auto-login
     router.push('/login?message=Account created successfully! Please sign in.')
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle specific registration errors
-    if (error.response?.data?.email) {
-      errors.email = error.response.data.email[0] || 'Email already exists'
-    } else if (error.response?.data?.password) {
-      errors.password = error.response.data.password[0]
+    const apiError = error as { response?: { data?: Record<string, string[]> } }
+    if (apiError.response?.data?.email?.[0]) {
+      errors.email = apiError.response.data.email[0] || 'Email already exists'
+    } else if (apiError.response?.data?.password?.[0]) {
+      errors.password = apiError.response.data.password[0]
     }
   }
 }

@@ -111,7 +111,7 @@
         <p class="mt-4 text-gray-600">Loading latest articles...</p>
       </div>
 
-      <div v-else-if="articles?.length">
+      <div v-else-if="articles?.results?.length">
         <div class="mb-8">
           <h2 class="text-3xl font-bold text-gray-900 mb-2">Latest Articles</h2>
           <p class="text-gray-600">Discover the most recent content from {{ currentAccount.name }}</p>
@@ -119,10 +119,10 @@
 
         <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mb-12">
           <Card
-            v-for="article in articles.slice(0, 6)"
+            v-for="article in (articles.results || []).slice(0, 6)"
             :key="article.id"
             :title="article.title"
-            :subtitle="`By ${article.author_name || 'Author'} • ${formatDate(article.published_at)}`"
+            :subtitle="`By ${article.author.username || 'Author'} • ${formatDate(article.published_at)}`"
             :content="article.excerpt"
             clickable
             class="h-full"
@@ -130,7 +130,7 @@
           />
         </div>
 
-        <div class="text-center" v-if="articles.length >= 6">
+        <div class="text-center" v-if="articles.results?.length >= 6">
           <router-link
             to="blog-home"
             class="inline-block bg-gray-900 text-white px-8 py-3 rounded-md font-semibold hover:bg-gray-800 transition-colors"
@@ -278,11 +278,13 @@ interface ArticleSummary {
   slug: string
   excerpt: string
   published_at: string | null
-  author_name: string
+  author: {
+    username: string
+  }
 }
 
 // API compositions
-const { data: articles, loading, error, fetchArticles } = useArticles<ArticleSummary[]>()
+const { articlesData: articles, loadingArticles: loading, errorArticles: error, fetchArticles } = useArticles()
 
 // Methods
 const loadAccount = async (slug: string) => {

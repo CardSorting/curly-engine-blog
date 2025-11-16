@@ -1,7 +1,7 @@
 import { ref, type Ref } from 'vue'
 import { apiClient } from '@/services/api/config'
 import { notify } from '@kyvg/vue3-notification'
-import type { ApiError, User, AccountUser, PaginatedResponse } from '@/types/api'
+import type { ApiError } from '@/types/api'
 
 interface ApiState<T> {
   data: Ref<T | null>
@@ -16,7 +16,7 @@ export function useApi<T>() {
     error: ref(null),
   }
 
-  const execute = async <P extends any[]>(
+  const execute = async <P extends unknown[]>(
     apiCall: (...args: P) => Promise<{ data: T }>,
     ...args: P
   ): Promise<T | null> => {
@@ -27,10 +27,10 @@ export function useApi<T>() {
       const response = await apiCall(...args)
       state.data.value = response.data
       return response.data
-    } catch (error: any) {
+    } catch (error: unknown) {
       const apiError = error as ApiError
       state.error.value = apiError.message || 'An error occurred'
-      
+
       notify({
         title: 'Error',
         text: state.error.value,
@@ -56,13 +56,13 @@ export function useApi<T>() {
   }
 }
 
-export function useUsers<T = any>() {
+export function useUsers<T = unknown>() {
   const api = useApi<T>()
 
-  const fetchUsers = (params?: Record<string, any>) =>
+  const fetchUsers = (params?: Record<string, unknown>) =>
     api.execute(apiClient.get, '/users/', { params })
 
-  const fetchAccountUsers = (params?: Record<string, any>) =>
+  const fetchAccountUsers = (params?: Record<string, unknown>) =>
     api.execute(apiClient.get, '/account/users/', { params })
 
   const inviteUser = (data: { email: string; role: string; first_name?: string; last_name?: string }) =>

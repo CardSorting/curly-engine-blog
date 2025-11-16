@@ -23,7 +23,7 @@
             v-model="form.title"
             type="text"
             placeholder="Enter article title"
-            :error-message="errors.title"
+            :error-message="errors.title || ''"
             required
             full-width
             class="mt-1"
@@ -40,7 +40,7 @@
             v-model="form.slug"
             type="text"
             placeholder="article-url-slug"
-            :error-message="errors.slug"
+            :error-message="errors.slug || ''"
             full-width
             class="mt-1"
           />
@@ -59,7 +59,7 @@
             v-model="form.excerpt"
             type="text"
             placeholder="Brief description of the article"
-            :error-message="errors.excerpt"
+            :error-message="errors.excerpt || ''"
             multiline
             :rows="3"
             full-width
@@ -111,7 +111,7 @@
             v-model="tagsInput"
             type="text"
             placeholder="tag1, tag2, tag3"
-            :error-message="errors.tags"
+            :error-message="errors.tags || ''"
             full-width
             class="mt-1"
           />
@@ -332,7 +332,7 @@ const form = ref({
     og_title: '',
     og_description: '',
     og_image: '',
-    twitter_card: 'summary_large_image',
+    twitter_card: 'summary_large_image' as string,
     twitter_title: '',
     twitter_description: '',
     twitter_image: ''
@@ -364,14 +364,14 @@ const loadArticle = async () => {
         allow_comments: article.allow_comments !== false,
         status: article.status || 'draft',
         publish_date: article.published_at ? new Date(article.published_at).toISOString().slice(0, 16) : '',
-        social_meta: article.social_meta || {
-          og_title: '',
-          og_description: '',
-          og_image: '',
-          twitter_card: 'summary_large_image',
-          twitter_title: '',
-          twitter_description: '',
-          twitter_image: ''
+        social_meta: {
+          og_title: article.social_meta?.og_title || '',
+          og_description: article.social_meta?.og_description || '',
+          og_image: article.social_meta?.og_image || '',
+          twitter_card: article.social_meta?.twitter_card || 'summary_large_image',
+          twitter_title: article.social_meta?.twitter_title || '',
+          twitter_description: article.social_meta?.twitter_description || '',
+          twitter_image: article.social_meta?.twitter_image || ''
         }
       }
       

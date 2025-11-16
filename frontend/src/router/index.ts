@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory, type RouteRecordRaw, type RouteLocationNormalized, type NavigationGuardNext } from 'vue-router'
 
 // Lazy-loaded components
 // Public views
@@ -24,7 +24,7 @@ const ArticleCreateView = () => import('@/views/admin/ArticleCreateView.vue')
 const ArticleEditView = () => import('@/views/admin/ArticleEditView.vue')
 const MediaManagerView = () => import('@/views/admin/MediaManagerView.vue')
 const UserManagementView = () => import('@/views/admin/UserManagementView.vue')
-const SettingsView = () => import('@/views/admin/SettingsView.vue')
+const SettingsView = () => import('@/views/admin/SettingsViewSOLID.vue')
 
 // Placeholder components for routes not yet implemented
 const TopicsView = () => import('@/views/admin/TopicsView.vue')
@@ -34,7 +34,7 @@ const AnalyticsView = () => import('@/views/admin/AnalyticsView.vue')
 const NewsletterView = () => import('@/views/admin/NewsletterView.vue')
 
 // Route guards - import stores inside functions to avoid initialization order issues
-const requireAuth = (to: any, from: any, next: any) => {
+const requireAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   import('@/stores/auth').then(({ useAuthStore }) => {
     const authStore = useAuthStore()
 
@@ -46,7 +46,7 @@ const requireAuth = (to: any, from: any, next: any) => {
   })
 }
 
-const requireTenant = (to: any, from: any, next: any) => {
+const requireTenant = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   Promise.all([
     import('@/stores/auth'),
     import('@/stores/tenant')
@@ -68,7 +68,7 @@ const requireTenant = (to: any, from: any, next: any) => {
   })
 }
 
-const checkAccountFromRoute = (to: any, from: any, next: any) => {
+const checkAccountFromRoute = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
   import('@/stores/tenant').then(({ useTenantStore }) => {
     const tenantStore = useTenantStore()
     const accountSlug = to.params.accountSlug as string

@@ -12,6 +12,55 @@ export interface ApiError {
   errors?: Record<string, string[]>
 }
 
+// Media Upload Response
+export interface MediaUploadResponse {
+  file: {
+    id: string
+    file: string
+    file_name: string
+    file_size: number
+    mime_type: string
+    uploaded_by: User
+    alt_text: string
+    url: string
+    name: string
+    uploaded_at: string
+  }
+}
+
+// Analytics Response Types
+export interface PageViewAnalytics {
+  total: number
+  uniqueViews: number
+  period: string
+  data: Array<{
+    date: string
+    views: number
+    unique_views: number
+  }>
+}
+
+export interface ArticleAnalytics {
+  article_id: string
+  views: number
+  unique_views: number
+  reading_time: number
+  bounce_rate: number
+  social_shares: number
+  comments: number
+}
+
+// Topic Response with Results
+export interface TopicResponse {
+  results: Topic[]
+}
+
+// Article Response for editing
+export type ArticleResponse = Article
+
+// Page View Response
+export type PageViewResponse = Page
+
 // Account Types
 export interface Account {
   id: string
@@ -38,15 +87,15 @@ export interface SubscriptionPlan {
   max_users: number
   max_articles: number
   max_storage_mb: number
-  features: Record<string, any>
+  features: Record<string, unknown>
   stripe_price_id_monthly: string
   stripe_price_id_yearly: string
   is_active: boolean
 }
 
-// Billing and Subscription Types
+// Billing and Subscription Types - Industry Standard Features
 export interface SubscriptionStatus {
-  subscription_status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid'
+  subscription_status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'unpaid' | 'incomplete'
   subscription_plan: SubscriptionPlan | null
   trial_ends_at: string | null
   subscription_ends_at: string | null
@@ -77,6 +126,68 @@ export interface BillingInfo {
   subscription_ends_at: string | null
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
+  payment_methods: PaymentMethod[]
+}
+
+export interface PaymentMethod {
+  id: string
+  type: string
+  card?: {
+    brand: string
+    last4: string
+    exp_month: number
+    exp_year: number
+  }
+  billing_details?: {
+    name: string
+    email: string
+  }
+}
+
+export interface Invoice {
+  id: string
+  number: string
+  amount: number
+  currency: string
+  status: 'draft' | 'open' | 'paid' | 'void' | 'uncollectible'
+  created: number
+  due_date?: number
+  hosted_invoice_url?: string
+  invoice_pdf?: string
+}
+
+export interface BillingAlert {
+  type: 'trial_ending' | 'usage_warning' | 'payment_failed'
+  severity: 'warning' | 'error'
+  message: string
+  action_required: boolean
+}
+
+export interface BillingAnalytics {
+  current_status: string
+  current_plan: string | null
+  trial_days_remaining: number | null
+  billing_cycle_days_remaining: number | null
+  total_invoices: number
+  last_payment_date?: string
+  next_billing_date?: string
+  usage_percentages: {
+    users: number
+    articles: number
+    storage: number
+  }
+}
+
+export interface ProrationCalculation {
+  proration_amount: number
+  currency: string
+  description: string
+}
+
+export interface CouponValidation {
+  success: boolean
+  error?: string
+  coupon?: string
 }
 
 // User Types
@@ -127,6 +238,10 @@ export interface Article {
   word_count: number
   reading_time: number
   view_count: number
+  tags: string[]
+  featured_image: string
+  is_featured: boolean
+  allow_comments: boolean
   social_meta?: {
     og_title?: string
     og_description?: string

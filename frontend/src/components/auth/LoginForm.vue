@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTenantStore } from '@/stores/tenant'
@@ -137,7 +137,7 @@ const handleSubmit = async () => {
   if (!validateForm()) return
 
   try {
-    const user = await authStore.login({
+    await authStore.login({
       email: form.email,
       password: form.password,
     })

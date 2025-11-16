@@ -59,6 +59,7 @@ export const createApiClient = (config: ApiConfig): AxiosInstance => {
                 client.defaults.headers.common['Authorization'] = `Bearer ${res.data.access}`
                 return client(originalRequest)
               }
+              return Promise.reject(new Error('Token refresh failed'))
             })
             .catch((refreshError) => {
               // Refresh failed, redirect to login

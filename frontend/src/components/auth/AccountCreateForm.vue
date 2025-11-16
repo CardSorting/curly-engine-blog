@@ -224,7 +224,7 @@ const validateSlug = (slug: string): boolean => {
 const slugify = () => {
   if (!form.name.trim()) return
 
-  let slug = form.name.toLowerCase()
+  const slug = form.name.toLowerCase()
     .replace(/[^\w\s-]/g, '') // Remove special characters
     .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
     .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
@@ -278,12 +278,13 @@ const handleSubmit = async () => {
 
     // Account created successfully - redirect to admin dashboard
     router.push(`/${account.slug}/admin`)
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Handle specific account creation errors
-    if (error.response?.data?.slug) {
-      errors.slug = error.response.data.slug[0] || 'This slug is already taken'
-    } else if (error.response?.data?.name) {
-      errors.name = error.response.data.name[0]
+    const apiError = error as { response?: { data?: Record<string, string[]> } }
+    if (apiError.response?.data?.slug?.[0]) {
+      errors.slug = apiError.response.data.slug[0] || 'This slug is already taken'
+    } else if (apiError.response?.data?.name?.[0]) {
+      errors.name = apiError.response.data.name[0]
     }
   }
 }

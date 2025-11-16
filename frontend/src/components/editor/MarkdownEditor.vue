@@ -269,7 +269,7 @@ const handleDrop = async (event: DragEvent) => {
   try {
     const response = await uploadMedia(formData)
     if (response && response.file) {
-      const markdown = `![${response.file.name}](${response.file.url})`
+      const markdown = `![${response.file.file_name}](${response.file.file})`
       const textarea = textareaRef.value
       if (textarea) {
         const start = textarea.selectionStart
@@ -302,6 +302,10 @@ watch(() => props.modelValue, (newValue) => {
 </script>
 
 <style scoped>
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .markdown-editor {
   @apply w-full;
 }

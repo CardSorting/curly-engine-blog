@@ -242,7 +242,8 @@ onMounted(async () => {
 const loadTopics = async () => {
   try {
     const response = await fetchTopics()
-    topics.value = response?.results || response || []
+    // Fix: Ensure we always assign an array of topics
+    topics.value = response?.results || []
   } catch (error) {
     console.error('Failed to load topics:', error)
   } finally {

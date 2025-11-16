@@ -1,10 +1,10 @@
 import { ref, computed } from 'vue'
 
 // Validation rule types
-type ValidationRule<T = any> = {
-  validator: (value: T, ...args: any[]) => boolean
+type ValidationRule<T = unknown> = {
+  validator: (value: T, ...args: unknown[]) => boolean
   message: string
-  params?: any[]
+  params?: unknown[]
 }
 
 type ValidationSchema = Record<string, ValidationRule[]>
@@ -13,14 +13,14 @@ type ValidationSchema = Record<string, ValidationRule[]>
 const patterns = {
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   url: /^https?:\/\/(?:[-\w.])+(?:[:\d]+)?(?:\/(?:[\w._~:/?#[\]@!$&'()*+,;=-]|%[\da-f]{2})*)?$/i,
-  phone: /^\+?[\d\s\-\(\)]{10,}$/,
+  phone: /^\+?[\d\s\-()]{10,}$/,
   slug: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
   username: /^[a-zA-Z0-9_]{3,30}$/,
 }
 
 // Common validation rules
 const rules = {
-  required: (value: any) => {
+  required: (value: unknown) => {
     if (Array.isArray(value)) return value.length > 0
     if (typeof value === 'string') return value.trim().length > 0
     if (typeof value === 'number') return !isNaN(value)
@@ -33,12 +33,12 @@ const rules = {
 
   phone: (value: string) => patterns.phone.test(value),
 
-  minLength: (value: string | any[], min: number) => {
+  minLength: (value: string | unknown[], min: number) => {
     if (Array.isArray(value)) return value.length >= min
     return typeof value === 'string' && value.length >= min
   },
 
-  maxLength: (value: string | any[], max: number) => {
+  maxLength: (value: string | unknown[], max: number) => {
     if (Array.isArray(value)) return value.length <= max
     return typeof value === 'string' && value.length <= max
   },
@@ -55,7 +55,7 @@ const rules = {
 
   confirmPassword: (value: string, confirmValue: string) => value === confirmValue,
 
-  unique: async (value: any, list: any[], field: string = 'id') => {
+  unique: async (value: unknown, list: Record<string, unknown>[], field: string = 'id') => {
     // Check if value is unique in the list
     return !list.some(item => item[field] === value)
   },
@@ -123,7 +123,7 @@ export function useValidation() {
   }
 
   // Validate a field
-  const validateField = (field: string, value: any, rule?: ValidationRule): ValidationResult => {
+  const validateField = (field: string, value: unknown, rule?: ValidationRule): ValidationResult => {
     const fieldErrors: string[] = []
 
     if (rule) {
@@ -140,7 +140,7 @@ export function useValidation() {
   }
 
   // Validate entire form
-  const validateForm = (data: Record<string, any>, schema: ValidationSchema): ValidationResult => {
+  const validateForm = (data: Record<string, unknown>, schema: ValidationSchema): ValidationResult => {
     const allErrors: Record<string, string[]> = {}
     let isFormValid = true
 
@@ -171,7 +171,7 @@ export function useValidation() {
   }
 
   // Validate single field
-  const validateSingleField = (field: string, value: any, fieldRules: ValidationRule[]): string[] => {
+  const validateSingleField = (field: string, value: unknown, fieldRules: ValidationRule[]): string[] => {
     const errors: string[] = []
 
     for (const rule of fieldRules) {
@@ -209,7 +209,7 @@ export function useValidation() {
   }
 
   // Sanitize input
-  const sanitize = (value: any, sanitizerKeys: Array<keyof typeof sanitizers>): any => {
+  const sanitize = (value: unknown, sanitizerKeys: Array<keyof typeof sanitizers>): unknown => {
     let sanitized = value
 
     for (const key of sanitizerKeys) {
@@ -313,7 +313,7 @@ export function useDebouncedValidation(debounceMs: number = 300) {
   const validation = useValidation()
   const debounceTimers: Record<string, number> = {}
 
-  const debouncedValidateField = (field: string, value: any, rules: ValidationRule[]) => {
+  const debouncedValidateField = (field: string, value: unknown, rules: ValidationRule[]) => {
     if (debounceTimers[field]) {
       clearTimeout(debounceTimers[field])
     }

@@ -195,6 +195,28 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 RESEND_API_KEY = config('RESEND_API_KEY', default='')
 FROM_EMAIL = config('FROM_EMAIL', default='noreply@example.com')
 
+# Stripe Billing
+STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY', default='')
+STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY', default='')
+STRIPE_WEBHOOK_SECRET = config('STRIPE_WEBHOOK_SECRET', default='')
+STRIPE_WEBHOOK_IP_WHITELIST_ENABLED = config('STRIPE_WEBHOOK_IP_WHITELIST_ENABLED', default=False, cast=bool)
+STRIPE_WEBHOOK_IP_WHITELIST = config('STRIPE_WEBHOOK_IP_WHITELIST', default=[
+    '54.187.174.169/32',  # Stripe webhook IPs (test mode)
+    '54.187.205.235/32',
+    '54.187.216.72/32',
+    '35.154.171.200/32',  # Additional Stripe IPs
+    '3.130.192.231/32',
+    '13.235.14.237/32',
+    '13.235.122.149/32',
+    '18.211.135.69/32',
+    '99.79.142.11/32',
+]).split(',') if config('STRIPE_WEBHOOK_IP_WHITELIST', default=None) else [
+    # Default Stripe webhook IP ranges
+    '54.187.174.169/32', '54.187.205.235/32', '54.187.216.72/32',
+    '35.154.171.200/32', '3.130.192.231/32', '13.235.14.237/32',
+    '13.235.122.149/32', '18.211.135.69/32', '99.79.142.11/32'
+]
+
 # Site URL (for email links) - Used for email verification links
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 SITE_URL = config('SITE_URL', default='http://localhost:3000')
