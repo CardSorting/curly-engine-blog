@@ -11,11 +11,12 @@ from .serializers import (
     ArticleCreateSerializer, ArticleUpdateSerializer,
     TopicSerializer, PageSerializer
 )
+from apps.accounts.permissions import IsAccountMember, IsArticleAuthorOrEditor, CanPublishArticles
 
 
 class ArticleListView(generics.ListCreateAPIView):
     """List articles and create new articles"""
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAccountMember]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'topic', 'author']
     search_fields = ['title', 'excerpt', 'content']
@@ -23,12 +24,15 @@ class ArticleListView(generics.ListCreateAPIView):
     ordering = ['-published_at', '-created_at']
 
     def get_queryset(self):
-        queryset = Article.objects.all()
-
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            queryset = Article.objects.filter(account=self.request.tenant)
+        else:
+            queryset = Article.objects.all()
+        
         # For non-authenticated users, only show published articles
         if not self.request.user.is_authenticated:
             queryset = queryset.filter(status='published')
-
         return queryset
 
     def get_serializer_class(self):
@@ -40,18 +44,18 @@ class ArticleListView(generics.ListCreateAPIView):
 class ArticleDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, or delete an article"""
     lookup_field = 'slug'
-    permission_classes = [
-        permissions.IsAuthenticatedOrReadOnly,
-        # Custom permission to only allow authors to edit their articles
-    ]
+    permission_classes = [IsAccountMember]
 
     def get_queryset(self):
-        queryset = Article.objects.all()
-
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            queryset = Article.objects.filter(account=self.request.tenant)
+        else:
+            queryset = Article.objects.all()
+        
         # For non-authenticated users, only show published articles
         if not self.request.user.is_authenticated:
             queryset = queryset.filter(status='published')
-
         return queryset
 
     def get_serializer_class(self):
@@ -62,13 +66,19 @@ class ArticleDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         """Allow authenticated users to view drafts, others only published"""
         if self.request.method in ['PUT', 'PATCH', 'DELETE']:
-            return [permissions.IsAuthenticated()]
-        return super().get_permissions()
+            return [IsAccountMember, IsArticleAuthorOrEditor()]
+        return [IsAccountMember]
 
     def check_object_permissions(self, request, obj):
         """Authors can edit their own articles, others can't modify"""
         if request.method in ['PUT', 'PATCH', 'DELETE']:
-            if obj.author != request.user:
+            # Check if user can edit this article (author or editor/admin)
+            if not (hasattr(request, 'account_user') and request.account_user):
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("You don't have permission to edit articles in this account.")
+            
+            # Allow if user can edit all articles or is the author
+            if not (request.account_user.can_edit_all_articles or obj.author == request.user):
                 from rest_framework.exceptions import PermissionDenied
                 raise PermissionDenied("You can only edit your own articles.")
         super().check_object_permissions(request, obj)
@@ -92,15 +102,21 @@ class ArticleDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 @api_view(['PATCH'])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([IsAccountMember, CanPublishArticles])
 def publish_article(request, slug):
     """Publish a draft article"""
     article = get_object_or_404(Article, slug=slug)
 
     # Check if user can publish this article
-    if article.author != request.user and not request.user.is_staff:
+    if not (hasattr(request, 'account_user') and request.account_user):
         return Response(
-            {'error': 'You can only publish your own articles.'},
+            {'error': 'You don\'t have permission to publish articles in this account.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    if not request.account_user.can_publish_articles:
+        return Response(
+            {'error': 'You don\'t have permission to publish articles.'},
             status=status.HTTP_403_FORBIDDEN
         )
 
@@ -121,9 +137,15 @@ def publish_article(request, slug):
 
 class TopicListView(generics.ListCreateAPIView):
     """List topics and create new topics"""
-    queryset = Topic.objects.all()
+    def get_queryset(self):
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            queryset = Topic.objects.filter(account=self.request.tenant)
+        else:
+            queryset = Topic.objects.all()
+        return queryset
     serializer_class = TopicSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAccountMember]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering = ['name']
@@ -131,9 +153,15 @@ class TopicListView(generics.ListCreateAPIView):
 
 class TopicDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, or delete a topic"""
-    queryset = Topic.objects.all()
+    def get_queryset(self):
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            queryset = Topic.objects.filter(account=self.request.tenant)
+        else:
+            queryset = Topic.objects.all()
+        return queryset
     serializer_class = TopicSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAccountMember]
     lookup_field = 'slug'
 
 
@@ -146,28 +174,43 @@ class TopicArticlesView(generics.ListAPIView):
     ordering = ['-published_at']
 
     def get_queryset(self):
-        topic = get_object_or_404(Topic, slug=self.kwargs['slug'])
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            topic = get_object_or_404(Topic, slug=self.kwargs['slug'], account=self.request.tenant)
+        else:
+            topic = get_object_or_404(Topic, slug=self.kwargs['slug'])
+        
         queryset = topic.articles.all()
-
         # For non-authenticated users, only show published articles
         if not self.request.user.is_authenticated:
             queryset = queryset.filter(status='published')
-
         return queryset
 
 
 class PageListView(generics.ListCreateAPIView):
     """List pages and create new pages"""
-    queryset = Page.objects.all()
+    def get_queryset(self):
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            queryset = Page.objects.filter(account=self.request.tenant)
+        else:
+            queryset = Page.objects.all()
+        return queryset
     serializer_class = PageSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAccountMember]
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'content']
 
 
 class PageDetailView(generics.RetrieveUpdateDestroyAPIView):
     """Retrieve, update, or delete a page"""
-    queryset = Page.objects.all()
+    def get_queryset(self):
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            queryset = Page.objects.filter(account=self.request.tenant)
+        else:
+            queryset = Page.objects.all()
+        return queryset
     serializer_class = PageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAccountMember]
     lookup_field = 'slug'

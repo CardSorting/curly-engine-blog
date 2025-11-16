@@ -11,15 +11,13 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # API endpoints
-    path('api/', include('apps.users.urls')),  # This will handle auth endpoints
-    path('api/media/', include('apps.media.urls')),
+    path('api/auth/', include('apps.users.urls')),
+    path('api/accounts/', include('apps.accounts.urls')),
     path('api/', include('apps.articles.urls')),
+    path('api/media/', include('apps.media.urls')),
     path('api/newsletter/', include('apps.newsletter.urls')),
-
-    # Add other apps as they get implemented
     path('api/analytics/', include('apps.analytics.urls')),
-    # SEO endpoints (no authentication required)
-    path('', include('apps.seo.urls')),
+    path('api/seo/', include('apps.seo.urls')),
 ]
 
 # Serve media files during development

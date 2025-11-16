@@ -8,15 +8,23 @@ class Topic(models.Model):
     Content categories (Technology, Writing, etc.)
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Tenant relationship
+    account = models.ForeignKey('accounts.Account', on_delete=models.CASCADE, related_name='topics', null=True, blank=True)
+    
     name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True, max_length=100)
+    slug = models.SlugField(max_length=100)
     description = models.TextField(blank=True)
     color = models.CharField(max_length=7, default='#0066FF')  # Hex color
-
+    
     created_at = models.DateTimeField(auto_now_add=True)
-
+    
     class Meta:
         ordering = ['name']
+        unique_together = [['account', 'slug']]  # Ensure unique slugs per account
+        indexes = [
+            models.Index(fields=['account', 'slug']),
+        ]
 
     def __str__(self):
         return self.name
@@ -38,9 +46,12 @@ class Article(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
+    # Tenant relationship
+    account = models.ForeignKey('accounts.Account', on_delete=models.CASCADE, related_name='articles', null=True, blank=True)
+
     # Content
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, max_length=200)
+    slug = models.SlugField(max_length=200)
     content = models.TextField()  # Markdown format
     excerpt = models.TextField(blank=True, max_length=300)
 
@@ -67,10 +78,12 @@ class Article(models.Model):
     class Meta:
         ordering = ['-published_at', '-created_at']
         indexes = [
-            models.Index(fields=['status', 'published_at']),
-            models.Index(fields=['slug']),
+            models.Index(fields=['account', 'status', 'published_at']),
+            models.Index(fields=['account', 'slug']),
             models.Index(fields=['author', 'status']),
+            models.Index(fields=['account', 'author']),
         ]
+        unique_together = [['account', 'slug']]  # Ensure unique slugs per account
 
     def __str__(self):
         return self.title
@@ -103,12 +116,22 @@ class Page(models.Model):
     Static pages (About, Now, etc.)
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Tenant relationship
+    account = models.ForeignKey('accounts.Account', on_delete=models.CASCADE, related_name='pages', null=True, blank=True)
+    
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, max_length=200)
+    slug = models.SlugField(max_length=200)
     content = models.TextField()  # Markdown
-
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = [['account', 'slug']]  # Ensure unique slugs per account
+        indexes = [
+            models.Index(fields=['account', 'slug']),
+        ]
 
     def __str__(self):
         return self.title

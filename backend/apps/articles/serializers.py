@@ -18,6 +18,18 @@ class TopicSerializer(serializers.ModelSerializer):
     def get_article_count(self, obj):
         return obj.articles.filter(status='published').count()
 
+    def create(self, validated_data):
+        # Set account from request tenant if available
+        if hasattr(self.context['request'], 'tenant') and self.context['request'].tenant:
+            validated_data['account'] = self.context['request'].tenant
+        elif hasattr(self.context['request'].user, 'default_account') and self.context['request'].user.default_account:
+            validated_data['account'] = self.context['request'].user.default_account
+        else:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("No account associated with this request.")
+        
+        return super().create(validated_data)
+
 
 class PageSerializer(serializers.ModelSerializer):
     """Serializer for static pages"""
@@ -36,6 +48,18 @@ class PageSerializer(serializers.ModelSerializer):
             import markdown
             return markdown.markdown(obj.content)
         return ''
+
+    def create(self, validated_data):
+        # Set account from request tenant if available
+        if hasattr(self.context['request'], 'tenant') and self.context['request'].tenant:
+            validated_data['account'] = self.context['request'].tenant
+        elif hasattr(self.context['request'].user, 'default_account') and self.context['request'].user.default_account:
+            validated_data['account'] = self.context['request'].user.default_account
+        else:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("No account associated with this request.")
+        
+        return super().create(validated_data)
 
 
 class ArticleListSerializer(serializers.ModelSerializer):
@@ -110,7 +134,18 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
+        # Set author from request
         validated_data['author'] = self.context['request'].user
+        
+        # Set account from request tenant if available
+        if hasattr(self.context['request'], 'tenant') and self.context['request'].tenant:
+            validated_data['account'] = self.context['request'].tenant
+        elif hasattr(self.context['request'].user, 'default_account') and self.context['request'].user.default_account:
+            validated_data['account'] = self.context['request'].user.default_account
+        else:
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("No account associated with this request.")
+        
         return super().create(validated_data)
 
 
