@@ -1,15 +1,16 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db import models
 from datetime import timedelta
 
 from .models import Account, SubscriptionPlan, AccountUser
 from .serializers import (
     AccountSerializer, AccountCreateSerializer, AccountUpdateSerializer,
-    SubscriptionPlanSerializer, AccountUserSerializer
+    AccountPublicSerializer, SubscriptionPlanSerializer, AccountUserSerializer
 )
 from .permissions import (
     IsAccountMember, IsAccountAdmin, CanManageUsers, CanManageBilling,
@@ -189,7 +190,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     def billing_info(self, request, pk=None):
         """Get billing information"""
         account = self.get_object()
-        
+
         data = {
             'subscription_status': account.subscription_status,
             'subscription_plan': SubscriptionPlanSerializer(account.subscription_plan).data if account.subscription_plan else None,
@@ -198,8 +199,37 @@ class AccountViewSet(viewsets.ModelViewSet):
             'stripe_customer_id': account.stripe_customer_id,
             'stripe_subscription_id': account.stripe_subscription_id,
         }
-        
+
         return Response(data)
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny])
+    def public_browse(self, request):
+        """Public endpoint for browsing all active accounts"""
+        search_query = request.query_params.get('search', '').strip()
+
+        # Query all active accounts
+        accounts = Account.objects.filter(is_active=True).order_by('-created_at')
+
+        # Apply search filter if provided
+        if search_query:
+            accounts = accounts.filter(
+                models.Q(name__icontains=search_query) |
+                models.Q(description__icontains=search_query) |
+                models.Q(slug__icontains=search_query)
+            )
+
+        serializer = AccountPublicSerializer(accounts, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], permission_classes=[AllowAny])
+    def public_detail(self, request, pk=None):
+        """Public endpoint for viewing account details by slug"""
+        try:
+            account = Account.objects.get(slug=pk, is_active=True)
+            serializer = AccountPublicSerializer(account)
+            return Response(serializer.data)
+        except Account.DoesNotExist:
+            return Response({'error': 'Account not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):

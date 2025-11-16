@@ -7,7 +7,8 @@
       </div>
 
       <!-- Article Form -->
-      <form @submit.prevent="saveArticle" class="space-y-6">
+      <div>
+        <form @submit.prevent="saveArticle" class="space-y-6">
         <!-- Title -->
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700">
@@ -18,11 +19,9 @@
         v-model="form.title"
         type="text"
         placeholder="Enter article title"
-        :error-message="errors.title"
-        required
+        v-bind="errors.title ? { 'error-message': errors.title } : {}"
         full-width
-        class="mt-1"
-          />
+        class="mt-1" />
         </div>
 
         <!-- Slug -->
@@ -35,10 +34,9 @@
         v-model="form.slug"
         type="text"
         placeholder="article-url-slug"
-        :error-message="errors.slug"
+        v-bind="errors.slug ? { 'error-message': errors.slug } : {}"
         full-width
-        class="mt-1"
-          />
+        class="mt-1" />
           <p class="mt-1 text-sm text-gray-500">
         Leave empty to generate automatically from title
           </p>
@@ -54,12 +52,11 @@
         v-model="form.excerpt"
         type="text"
         placeholder="Brief description of the article"
-        :error-message="errors.excerpt"
+        v-bind="errors.excerpt ? { 'error-message': errors.excerpt } : {}"
         multiline
         :rows="3"
         full-width
-        class="mt-1"
-          />
+        class="mt-1" />
           <p class="mt-1 text-sm text-gray-500">
         Short summary displayed in article listings (optional)
           </p>
@@ -106,7 +103,7 @@
         v-model="tagsInput"
         type="text"
         placeholder="tag1, tag2, tag3"
-        :error-message="errors.tags"
+        v-bind="errors.tags ? { 'error-message': errors.tags } : {}"
         full-width
         class="mt-1"
           />
@@ -226,65 +223,65 @@
         <!-- Publishing Options -->
         <div class="border-t pt-6">
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Publish Date</label>
-          <input
-            type="datetime-local"
-            v-model="form.publish_date"
-            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          />
-          <p class="mt-1 text-sm text-gray-500">Leave empty to publish immediately</p>
-        </div>
-        
-        <div class="flex items-center space-x-4">
-          <label class="flex items-center">
-            <input
-              type="checkbox"
-              v-model="form.is_featured"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <span class="ml-2 text-sm text-gray-700">Featured article</span>
-          </label>
-          
-          <label class="flex items-center">
-            <input
-              type="checkbox"
-              v-model="form.allow_comments"
-              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <span class="ml-2 text-sm text-gray-700">Allow comments</span>
-          </label>
-        </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Publish Date</label>
+              <input
+                type="datetime-local"
+                v-model="form.publish_date"
+                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+              <p class="mt-1 text-sm text-gray-500">Leave empty to publish immediately</p>
+            </div>
+
+            <div class="flex items-center space-x-4">
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  v-model="form.is_featured"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span class="ml-2 text-sm text-gray-700">Featured article</span>
+              </label>
+
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  v-model="form.allow_comments"
+                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <span class="ml-2 text-sm text-gray-700">Allow comments</span>
+              </label>
+            </div>
           </div>
 
           <div class="flex items-center justify-between mt-4">
-          <router-link
-            :to="{ name: 'admin-articles' }"
-            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Cancel
-          </router-link>
-          
-          <button
-            type="button"
-            @click="saveDraft"
-            :disabled="saving"
-            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Save Draft
-          </button>
-          
-          <button
-            type="submit"
-            :disabled="saving || !form.title || !form.content"
-            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {{ saving ? 'Publishing...' : 'Publish' }}
-          </button>
-        </div>
+            <router-link
+              :to="{ name: 'admin-articles' }"
+              class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </router-link>
+
+            <button
+              type="button"
+              @click="saveDraft"
+              :disabled="saving"
+              class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Save Draft
+            </button>
+
+            <button
+              type="submit"
+              :disabled="saving || !form.title || !form.content"
+              class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {{ saving ? 'Publishing...' : 'Publish' }}
+            </button>
           </div>
         </div>
       </form>
+      </div>
     </div>
   </AdminLayout>
 </template>
@@ -296,13 +293,13 @@ import AdminLayout from '@/layouts/AdminLayout.vue'
 import MarkdownEditor from '@/components/editor/MarkdownEditor.vue'
 import { PhotoIcon } from '@heroicons/vue/24/outline'
 import { useArticles, useTopics } from '@/composables/useApi'
-import { type Topic } from '@/types/api'
+import { type Topic, type PaginatedResponse } from '@/types/api'
 import Input from '@/components/ui/Input.vue'
 import { useNotification } from '@kyvg/vue3-notification'
 
 const router = useRouter()
 const { createArticle } = useArticles()
-const { fetchTopics } = useTopics()
+const { fetchTopics } = useTopics<PaginatedResponse<Topic>>()
 const { notify } = useNotification()
 
 const saving = ref(false)

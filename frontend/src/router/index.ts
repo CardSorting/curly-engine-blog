@@ -1,11 +1,17 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 // Lazy-loaded components
+// Public views
+const AccountBrowseView = () => import('../views/blog/AccountBrowseView.vue')
+const AccountHomeView = () => import('../views/blog/AccountHomeView.vue')
+
+// Auth views
 const LoginView = () => import('@/views/auth/LoginView.vue')
 const RegisterView = () => import('@/views/auth/RegisterView.vue')
 const AccountSelectView = () => import('@/views/auth/AccountSelectView.vue')
 const AccountCreateView = () => import('@/views/auth/AccountCreateView.vue')
 
+// Blog views
 const BlogHomeView = () => import('@/views/blog/BlogHomeView.vue')
 const ArticleDetailView = () => import('@/views/blog/ArticleDetailView.vue')
 const TopicArticlesView = () => import('@/views/blog/TopicArticlesView.vue')
@@ -80,6 +86,20 @@ const checkAccountFromRoute = (to: any, from: any, next: any) => {
 }
 
 const routes: RouteRecordRaw[] = [
+  // Public editorial discovery routes
+  {
+    path: '/',
+    name: 'discover',
+    component: AccountBrowseView,
+    meta: { layout: 'blog', seo: { title: 'Discover Editorials' } }
+  },
+  {
+    path: '/:accountSlug',
+    name: 'account-home',
+    component: AccountHomeView,
+    meta: { layout: 'blog' }
+  },
+
   // Authentication routes
   {
     path: '/login',
@@ -108,9 +128,9 @@ const routes: RouteRecordRaw[] = [
     beforeEnter: requireAuth
   },
 
-  // Public blog routes
+  // Legacy blog routes (for backward compatibility during transition)
   {
-    path: '/',
+    path: '/legacy-blog',
     name: 'blog-home',
     component: BlogHomeView,
     meta: { layout: 'blog', seo: { title: 'Home' } }

@@ -85,12 +85,28 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return account
 
 
+class AccountPublicSerializer(serializers.ModelSerializer):
+    """Serializer for public account browsing - only includes safe, public fields"""
+    owner_name = serializers.CharField(source='owner.username', read_only=True)
+    since = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Account
+        fields = [
+            'id', 'name', 'slug', 'description', 'owner_name',
+            'current_article_count', 'since'
+        ]
+
+    def get_since(self, obj):
+        return obj.created_at.year
+
+
 class AccountUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating account settings"""
     class Meta:
         model = Account
         fields = ['name', 'description', 'custom_domain']
-    
+
     def validate_custom_domain(self, value):
         if value:
             # Basic domain validation
