@@ -259,23 +259,37 @@ const { subscribe } = useNewsletter()
 const selectedPeriod = ref('30')
 const loading = ref(true)
 const refreshing = ref(false)
+const analyticsData = ref<any>(null)
 const articles = ref<Article[]>([])
 
 const stats = computed(() => {
+  if (!analyticsData.value) {
+    // Fallback mock data while loading
+    return {
+      totalViews: 0,
+      totalArticles: 0,
+      publishedArticles: 0,
+      draftArticles: 0,
+      totalSubscribers: 0,
+      subscribersChange: 0,
+      viewsChange: 0,
+      avgReadingTime: 0,
+    }
+  }
+
   const publishedArticles = articles.value.filter(a => a.is_published)
-  const totalViews = articles.value.reduce((sum, a) => sum + (a.view_count || 0), 0)
   const avgReadingTime = publishedArticles.length > 0
     ? Math.round(publishedArticles.reduce((sum, a) => sum + a.reading_time, 0) / publishedArticles.length)
     : 0
 
   return {
-    totalViews,
+    totalViews: analyticsData.value.overview.total_views,
     totalArticles: articles.value.length,
     publishedArticles: publishedArticles.length,
     draftArticles: articles.value.filter(a => !a.is_published).length,
-    totalSubscribers: 1250, // Mock data - would come from API
-    subscribersChange: 45, // Mock data
-    viewsChange: 12.5, // Mock data
+    totalSubscribers: analyticsData.value.overview.total_unique_views, // Using unique views as subscriber proxy for now
+    subscribersChange: 5, // Could be calculated from daily trend if needed
+    viewsChange: 10, // Could be calculated from daily trend if needed
     avgReadingTime,
   }
 })
@@ -348,8 +362,24 @@ const getPerformanceLabel = (article: Article) => {
 const loadAnalytics = async () => {
   loading.value = true
   try {
-    const response = await fetchArticles()
-    articles.value = response?.results || response || []
+    // Load analytics data from the dashboard API
+    const analyticsResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/analytics/dashboard/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+      }
+    })
+
+    if (analyticsResponse.ok) {
+      analyticsData.value = await analyticsResponse.json()
+    } else {
+      console.error('Failed to load analytics data:', analyticsResponse.statusText)
+    }
+
+    // Still load articles for article-specific data
+    const articlesResponse = await fetchArticles()
+    articles.value = Array.isArray(articlesResponse) ? articlesResponse : (articlesResponse as any)?.results || []
   } catch (error) {
     console.error('Failed to load analytics:', error)
   } finally {

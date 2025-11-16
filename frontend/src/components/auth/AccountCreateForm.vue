@@ -143,6 +143,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTenantStore } from '@/stores/tenant'
+import { apiClient } from '@/services/api/config'
 import { type SubscriptionPlan } from '@/types/api'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -167,41 +168,52 @@ const errors = reactive({
 })
 
 onMounted(async () => {
-  // TODO: Load subscription plans
-  // This would typically be loaded from the backend
-  subscriptionPlans.value = [
-    {
-      id: 'free',
-      name: 'Free',
-      slug: 'free',
-      description: 'Perfect for getting started',
-      monthly_price: 0,
-      yearly_price: 0,
-      max_users: 1,
-      max_articles: 10,
-      max_storage_mb: 100,
-      features: {},
-      stripe_price_id_monthly: '',
-      stripe_price_id_yearly: '',
-      is_active: true,
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      slug: 'pro',
-      description: 'For growing blogs',
-      monthly_price: 9.99,
-      yearly_price: 99.99,
-      max_users: 5,
-      max_articles: 1000,
-      max_storage_mb: 1000,
-      features: {},
-      stripe_price_id_monthly: 'price_pro_monthly',
-      stripe_price_id_yearly: 'price_pro_yearly',
-      is_active: true,
-    },
-  ]
-  selectedPlan.value = 'free' // Default to free plan
+  try {
+    // Load subscription plans from the backend
+    const response = await apiClient.get('/accounts/subscription-plans/')
+    subscriptionPlans.value = response.data || []
+
+    // Select the first (free) plan by default
+    if (subscriptionPlans.value.length > 0) {
+      selectedPlan.value = subscriptionPlans.value[0]?.id || ''
+    }
+  } catch (error) {
+    console.error('Failed to load subscription plans:', error)
+    // Fallback to basic plans if API fails (during development)
+    subscriptionPlans.value = [
+      {
+        id: 'free',
+        name: 'Free',
+        slug: 'free',
+        description: 'Perfect for getting started',
+        monthly_price: 0,
+        yearly_price: 0,
+        max_users: 1,
+        max_articles: 10,
+        max_storage_mb: 100,
+        features: {},
+        stripe_price_id_monthly: '',
+        stripe_price_id_yearly: '',
+        is_active: true,
+      },
+      {
+        id: 'pro',
+        name: 'Pro',
+        slug: 'pro',
+        description: 'For growing blogs',
+        monthly_price: 9.99,
+        yearly_price: 99.99,
+        max_users: 5,
+        max_articles: 1000,
+        max_storage_mb: 1000,
+        features: {},
+        stripe_price_id_monthly: 'price_pro_monthly',
+        stripe_price_id_yearly: 'price_pro_yearly',
+        is_active: true,
+      },
+    ]
+    selectedPlan.value = 'free'
+  }
 })
 
 const validateSlug = (slug: string): boolean => {
@@ -261,8 +273,7 @@ const handleSubmit = async () => {
     const account = await tenantStore.createAccount({
       name: form.name.trim(),
       slug: form.slug,
-      description: form.description.trim() || undefined,
-      // TODO: Add subscription plan selection
+      description: form.description.trim(),
     })
 
     // Account created successfully - redirect to admin dashboard

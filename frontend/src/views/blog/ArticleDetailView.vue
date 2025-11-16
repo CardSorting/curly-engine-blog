@@ -145,12 +145,90 @@ const formatDate = (dateString: string) => {
   })
 }
 
+// Set meta tags for SEO and social sharing
+const setMetaTags = (article: Article, accountSlug: string) => {
+  const baseUrl = window.location.origin
+  const articleUrl = `${baseUrl}/${accountSlug}/${article.slug}`
+  const imageUrl = article.hero_image?.file ? `https:${article.hero_image.file}` : ''
+
+  // Update document title
+  document.title = `${article.title} | ${appName.value}`
+
+  // Remove existing meta tags to avoid duplicates
+  const existingMeta = document.querySelectorAll('meta[name="description"], meta[property^="og:"], meta[name="twitter:"]')
+  existingMeta.forEach(tag => tag.remove())
+
+  // Create new meta tags
+  const metaTags = [
+    // Description
+    { name: 'description', content: article.excerpt || `Read ${article.title} - ${appName.value}` },
+
+    // Open Graph tags
+    { property: 'og:title', content: article.title },
+    { property: 'og:description', content: article.excerpt || `Read ${article.title} - ${appName.value}` },
+    { property: 'og:url', content: articleUrl },
+    { property: 'og:type', content: 'article' },
+    { property: 'og:site_name', content: appName.value },
+
+    // Twitter Card tags
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: article.title },
+    { name: 'twitter:description', content: article.excerpt || `Read ${article.title} - ${appName.value}` },
+  ]
+
+  // Add image if available
+  if (imageUrl) {
+    metaTags.push({ property: 'og:image', content: imageUrl })
+    metaTags.push({ name: 'twitter:image', content: imageUrl })
+  }
+
+  // Add article-specific meta tags
+  if (article.published_at) {
+    const publishedDate = new Date(article.published_at).toISOString()
+    metaTags.push({ property: 'article:published_time', content: publishedDate })
+  }
+
+  if (article.topic) {
+    metaTags.push({ property: 'article:section', content: article.topic.name })
+  }
+
+  // Insert meta tags
+  metaTags.forEach(({ name, property, content }) => {
+    const meta = document.createElement('meta')
+    if (name) meta.setAttribute('name', name)
+    if (property) meta.setAttribute('property', property)
+    meta.setAttribute('content', content)
+    document.head.appendChild(meta)
+  })
+
+  // Set canonical URL
+  let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement
+  if (!canonicalLink) {
+    canonicalLink = document.createElement('link')
+    canonicalLink.rel = 'canonical'
+    document.head.appendChild(canonicalLink)
+  }
+  canonicalLink.href = articleUrl
+
+  // Update view count (fire and forget)
+  if (article.id) {
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/detail/${article.id}/view/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    }).catch(err => console.log('View tracking failed:', err))
+  }
+}
+
 // Load article on mount
 onMounted(async () => {
   try {
     // For multi-tenant routing, we need to pass the account slug to the API
     await fetchArticle(articleSlug.value, accountSlug.value)
-    // TODO: Add meta tag setup with vue-meta
+
+    // Set meta tags for SEO and social sharing
+    if (article.value && accountSlug.value) {
+      setMetaTags(article.value, accountSlug.value)
+    }
   } catch (err) {
     console.error('Failed to load article:', err)
   }

@@ -314,6 +314,7 @@ const form = ref({
   topic_id: '',
   tags: [] as string[],
   featured_image: '',
+  hero_image_id: '',
   is_featured: false,
   allow_comments: true,
   status: 'published' as 'draft' | 'published',
@@ -362,16 +363,51 @@ const handleTitleChange = () => {
   }
 }
 
-const handleImageUpload = (event: Event) => {
+const handleImageUpload = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0]
   if (file) {
-    // In a real implementation, you would upload to a server
-    // For now, we'll use a placeholder URL
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      form.value.featured_image = e.target?.result as string
+    try {
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('alt_text', `Featured image for ${form.value.title || 'article'}`)
+      formData.append('is_featured', 'true')
+
+      // Upload to media endpoint
+      const uploadResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/media/upload/`, {
+        method: 'POST',
+        headers: {
+          // Note: Don't set Content-Type for FormData - browser sets it with boundary
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: formData
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.statusText}`)
+      }
+
+      const mediaData = await uploadResponse.json()
+
+      // Store the uploaded media ID or URL in the form
+      form.value.hero_image_id = mediaData.id
+
+      // For preview, use the uploaded file URL
+      form.value.featured_image = mediaData.file
+
+      notify({
+        title: 'Success',
+        text: 'Image uploaded successfully',
+        type: 'success'
+      })
+    } catch (error) {
+      console.error('Image upload failed:', error)
+      notify({
+        title: 'Upload Failed',
+        text: 'Failed to upload image. Please try again.',
+        type: 'error'
+      })
     }
-    reader.readAsDataURL(file)
   }
 }
 

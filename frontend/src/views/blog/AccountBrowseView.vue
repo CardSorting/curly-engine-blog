@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { NewspaperIcon } from '@heroicons/vue/24/outline'
 import { apiClient } from '@/services/api/config'
@@ -195,8 +195,13 @@ const fetchAccounts = async () => {
   error.value = null
 
   try {
-    // Fetch public accounts from the API
-    const response = await apiClient.get('/accounts/public_browse/')
+    // Fetch public accounts from the API - uses search params if provided
+    const params = new URLSearchParams()
+    if (searchQuery.value.trim()) {
+      params.append('search', searchQuery.value.trim())
+    }
+
+    const response = await apiClient.get(`/accounts/public_browse/?${params.toString()}`)
     accounts.value = response.data || []
   } catch (err: any) {
     error.value = err?.response?.data?.error || err.response?.data?.message || err.message || 'Failed to load editorials'
@@ -208,5 +213,16 @@ const fetchAccounts = async () => {
 
 onMounted(() => {
   fetchAccounts()
+})
+
+// Watch for search query changes and debounce the API call
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+watch(searchQuery, () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    fetchAccounts()
+  }, 300) // 300ms debounce
 })
 </script>

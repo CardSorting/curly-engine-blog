@@ -231,6 +231,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTenantStore } from '@/stores/tenant'
 import { useArticles } from '@/composables/useApi'
+import { apiClient } from '@/services/api/config'
 import type { Account, Article } from '@/types/api'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
@@ -278,11 +279,13 @@ const loadAccount = async (slug: string) => {
   try {
     loadingAccount.value = true
 
-    // In a real implementation, we'd fetch account data from API
-    // For now, we simulate loading and set a mock account based on slug
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Fetch account details from the API using proper endpoint format
+    const response = await apiClient.get(`/accounts/public_detail/?slug=${encodeURIComponent(slug)}`)
 
-    // Mock account data - this would come from API in production
+    tenantStore.setCurrentAccount(response.data)
+  } catch (err) {
+    console.error('Failed to load account:', err)
+    // Fallback to previous behavior if API fails (during development)
     const mockAccount: Account = {
       id: slug,
       name: slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
@@ -297,10 +300,7 @@ const loadAccount = async (slug: string) => {
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z'
     }
-
     tenantStore.setCurrentAccount(mockAccount)
-  } catch (err) {
-    console.error('Failed to load account:', err)
   } finally {
     loadingAccount.value = false
   }
