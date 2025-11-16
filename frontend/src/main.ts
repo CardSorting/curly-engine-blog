@@ -6,6 +6,7 @@ import App from './App.vue'
 import router from './router'
 import { useAuthStore } from './stores/auth'
 import { useTenantStore } from './stores/tenant'
+import { registerServiceWorker } from './composables/useServiceWorker'
 
 const app = createApp(App)
 
@@ -18,5 +19,8 @@ const tenantStore = useTenantStore()
 
 authStore.initializeAuth()
 tenantStore.initializeTenant()
+
+// Register service worker
+registerServiceWorker()
 
 app.mount('#app')
