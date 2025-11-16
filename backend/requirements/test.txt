@@ -1,0 +1,37 @@
+# requirements/base.txt
+
+# Django Core
+Django==5.0.3
+psycopg2-binary==2.9.9          # PostgreSQL adapter
+
+# REST API
+djangorestframework==3.14.0      # REST framework
+djangorestframework-simplejwt==5.3.1  # JWT authentication
+django-cors-headers==4.3.1       # CORS handling
+django-filter==24.1              # API filtering
+
+# File Storage
+django-storages==1.14.2          # S3 integration
+boto3==1.34.51                   # AWS SDK
+Pillow==10.2.0                   # Image processing
+
+# Email
+resend==0.7.0                    # Email API
+beautifulsoup4==4.12.2           # HTML parsing for email tracking
+
+# Content Processing
+markdown==3.5.2                  # Markdown to HTML
+bleach==6.1.0                    # HTML sanitization
+
+# Utilities
+python-decouple==3.8             # Environment variables
+python-slugify==8.0.4            # Slug generation
+# Testing dependencies
+-r base.txt
+
+pytest==8.0.0
+pytest-django==4.5.1
+pytest-cov==4.1.0
+faker==20.1.0
+factory-boy==3.2.1
+django-test-plus==2.2.1

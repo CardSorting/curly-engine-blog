@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'storages',
+    # 'drf_spectacular',  # Commented out for testing
 
     # Local apps
     'apps.core',  # Core management commands
@@ -78,16 +79,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+import sys
+if 'pytest' in sys.modules or any('pytest' in arg for arg in sys.argv):
+    # Use SQLite for tests
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DB_NAME'),
+            'USER': config('DB_USER'),
+            'PASSWORD': config('DB_PASSWORD'),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='5432'),
+        }
+    }
 
 # SQLite configuration (commented out)
 # DATABASES = {
@@ -132,6 +143,7 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
+    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Commented out for testing
 }
 
 # JWT Settings
@@ -184,6 +196,43 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
+
+# DRF Spectacular settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Chronicle Blog API',
+    'DESCRIPTION': 'A RESTful API for a content management system with blog functionality, user authentication, media management, newsletter system, and SEO optimization.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '/api/v[0-9]',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SERVERS': [
+        {'url': 'http://localhost:8000', 'description': 'Development server'},
+    ],
+    'SECURITY': [
+        {
+            'BearerAuth': {
+                'type': 'http',
+                'scheme': 'bearer',
+                'bearerFormat': 'JWT',
+            }
+        }
+    ],
+    'SECURITY_REQUIREMENTS': [
+        {
+            'BearerAuth': []
+        }
+    ],
+    'TAGS': [
+        {'name': 'Authentication', 'description': 'User authentication and profile management'},
+        {'name': 'Articles', 'description': 'Article and content management'},
+        {'name': 'Topics', 'description': 'Content categorization'},
+        {'name': 'Pages', 'description': 'Static page content'},
+        {'name': 'Media', 'description': 'File upload and media management'},
+        {'name': 'Analytics', 'description': 'Page view tracking and analytics'},
+        {'name': 'Newsletter', 'description': 'Newsletter subscription and campaigns'},
+        {'name': 'SEO', 'description': 'Search engine optimization'},
+    ],
+}
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

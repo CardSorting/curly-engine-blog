@@ -9,8 +9,23 @@
               {{ appName }}
             </router-link>
           </div>
-          <div class="flex items-center space-x-4">
-            <router-link to="/search" class="text-gray-600 hover:text-gray-900">
+          <div class="flex items-center space-x-6">
+            <!-- Topic Filter -->
+            <div class="relative">
+              <select
+                v-model="selectedTopic"
+                @change="onTopicChange"
+                class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Topics</option>
+                <option v-for="topic in topics" :key="topic.id" :value="topic.slug">
+                  {{ topic.name }}
+                </option>
+              </select>
+              <ChevronDownIcon class="absolute right-2 top-2 h-4 w-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            <router-link to="/search" class="text-gray-600 hover:text-gray-900 text-sm">
               Search
             </router-link>
           </div>
@@ -84,23 +99,43 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ChevronDownIcon } from '@heroicons/vue/24/outline'
 import { useArticles, useTopics } from '@/composables/useApi'
 import { type Article, type Topic } from '@/types/api'
 import Button from '@/components/ui/Button.vue'
 import Card from '@/components/ui/Card.vue'
 
 const router = useRouter()
-const { data: articles, loading, error, execute: fetchArticles } = useArticles()
-const { data: topics } = useTopics()
+const { data: articles, loading, error, fetchArticles } = useArticles()
+const { data: topics, fetchTopics } = useTopics()
 
 const appName = ref(import.meta.env.VITE_APP_NAME || 'Chronicle')
+const selectedTopic = ref('')
 
 onMounted(async () => {
-  await loadArticles()
+  await Promise.all([
+    loadTopics(),
+    loadArticles()
+  ])
 })
 
-const loadArticles = async () => {
-  await fetchArticles()
+const loadArticles = async (params?: Record<string, any>) => {
+  await fetchArticles(params)
+}
+
+const loadTopics = async () => {
+  await fetchTopics()
+}
+
+const onTopicChange = () => {
+  const params: any = {}
+  if (selectedTopic.value) {
+    // For topic filtering, we'll redirect to topic page
+    router.push(`/topics/${selectedTopic.value}`)
+  } else {
+    // Load all articles
+    loadArticles()
+  }
 }
 
 const formatDate = (dateString: string | null): string => {
