@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="{{ xmlns }}">
+{% for entry in entries %}
+  <url>
+    <loc>{{ entry.url }}</loc>
+    <lastmod>{{ entry.lastmod }}</lastmod>
+    <changefreq>{{ entry.changefreq }}</changefreq>
+    <priority>{{ entry.priority }}</priority>
+  </url>
+{% endfor %}
+</urlset>

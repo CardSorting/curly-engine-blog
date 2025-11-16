@@ -1,0 +1,14 @@
+Confirm Your Newsletter Subscription
+
+Hello{{ subscriber.first_name|default:"" }},
+
+Thank you for subscribing to our newsletter! To complete your subscription, please visit the link below to confirm your email address:
+
+{{ confirmation_url }}
+
+This confirmation helps us ensure that we have your correct email address and that you actually want to receive our newsletter.
+
+If you didn't request this subscription, you can safely ignore this email.
+
+---
+This email was sent to {{ subscriber.email }}. If you have any questions, please contact our support team.

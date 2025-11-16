@@ -1,0 +1,16 @@
+-r base.txt
+
+# Testing
+pytest==8.0.2
+pytest-django==4.8.0
+pytest-cov==4.1.0
+factory-boy==3.3.0               # Test fixtures
+
+# Code Quality
+black==24.2.0                    # Code formatting
+flake8==7.0.0                    # Linting
+isort==5.13.2                    # Import sorting
+
+# Development Tools
+django-extensions==3.2.3         # Management commands
+ipython==8.22.1                  # Better shell

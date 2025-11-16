@@ -1,0 +1,173 @@
+from rest_framework import generics, permissions, status, filters
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from django.shortcuts import get_object_or_404
+from django.db.models import Q
+
+from .models import Article, Topic, Page
+from .serializers import (
+    ArticleListSerializer, ArticleDetailSerializer,
+    ArticleCreateSerializer, ArticleUpdateSerializer,
+    TopicSerializer, PageSerializer
+)
+
+
+class ArticleListView(generics.ListCreateAPIView):
+    """List articles and create new articles"""
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'topic', 'author']
+    search_fields = ['title', 'excerpt', 'content']
+    ordering_fields = ['published_at', 'created_at', 'view_count']
+    ordering = ['-published_at', '-created_at']
+
+    def get_queryset(self):
+        queryset = Article.objects.all()
+
+        # For non-authenticated users, only show published articles
+        if not self.request.user.is_authenticated:
+            queryset = queryset.filter(status='published')
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return ArticleCreateSerializer
+        return ArticleListSerializer
+
+
+class ArticleDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update, or delete an article"""
+    lookup_field = 'slug'
+    permission_classes = [
+        permissions.IsAuthenticatedOrReadOnly,
+        # Custom permission to only allow authors to edit their articles
+    ]
+
+    def get_queryset(self):
+        queryset = Article.objects.all()
+
+        # For non-authenticated users, only show published articles
+        if not self.request.user.is_authenticated:
+            queryset = queryset.filter(status='published')
+
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return ArticleUpdateSerializer
+        return ArticleDetailSerializer
+
+    def get_permissions(self):
+        """Allow authenticated users to view drafts, others only published"""
+        if self.request.method in ['PUT', 'PATCH', 'DELETE']:
+            return [permissions.IsAuthenticated()]
+        return super().get_permissions()
+
+    def check_object_permissions(self, request, obj):
+        """Authors can edit their own articles, others can't modify"""
+        if request.method in ['PUT', 'PATCH', 'DELETE']:
+            if obj.author != request.user:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("You can only edit your own articles.")
+        super().check_object_permissions(request, obj)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Override to increment view count"""
+        instance = self.get_object()
+
+        # Increment view count for published articles
+        if instance.status == 'published':
+            instance.view_count += 1
+            instance.save(update_fields=['view_count'])
+
+        # Check if user has permission to view draft
+        if instance.status == 'draft' and instance.author != request.user:
+            if not request.user.is_staff:
+                from rest_framework.exceptions import NotFound
+                raise NotFound()
+
+        return super().retrieve(request, *args, **kwargs)
+
+
+@api_view(['PATCH'])
+@permission_classes([permissions.IsAuthenticated])
+def publish_article(request, slug):
+    """Publish a draft article"""
+    article = get_object_or_404(Article, slug=slug)
+
+    # Check if user can publish this article
+    if article.author != request.user and not request.user.is_staff:
+        return Response(
+            {'error': 'You can only publish your own articles.'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+
+    if article.status == 'published':
+        return Response(
+            {'error': 'Article is already published.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    article.status = 'published'
+    from django.utils import timezone
+    article.published_at = timezone.now()
+    article.save()
+
+    serializer = ArticleDetailSerializer(article)
+    return Response(serializer.data)
+
+
+class TopicListView(generics.ListCreateAPIView):
+    """List topics and create new topics"""
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'description']
+    ordering = ['name']
+
+
+class TopicDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update, or delete a topic"""
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'slug'
+
+
+class TopicArticlesView(generics.ListAPIView):
+    """List articles for a specific topic"""
+    serializer_class = ArticleListSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status']
+    ordering_fields = ['published_at', 'created_at', 'view_count']
+    ordering = ['-published_at']
+
+    def get_queryset(self):
+        topic = get_object_or_404(Topic, slug=self.kwargs['slug'])
+        queryset = topic.articles.all()
+
+        # For non-authenticated users, only show published articles
+        if not self.request.user.is_authenticated:
+            queryset = queryset.filter(status='published')
+
+        return queryset
+
+
+class PageListView(generics.ListCreateAPIView):
+    """List pages and create new pages"""
+    queryset = Page.objects.all()
+    serializer_class = PageSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'content']
+
+
+class PageDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update, or delete a page"""
+    queryset = Page.objects.all()
+    serializer_class = PageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'slug'

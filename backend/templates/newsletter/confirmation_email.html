@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Newsletter Subscription</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border: 1px solid #e9ecef;
+            border-top: none;
+        }
+        .button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            border-radius: 0 0 5px 5px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Confirm Your Subscription</h1>
+    </div>
+    
+    <div class="content">
+        <p>Hello{{ subscriber.first_name|default:"" }},</p>
+        
+        <p>Thank you for subscribing to our newsletter! To complete your subscription, please click the button below to confirm your email address:</p>
+        
+        <div style="text-align: center;">
+            <a href="{{ confirmation_url }}" class="button">Confirm Subscription</a>
+        </div>
+        
+        <p>If the button above doesn't work, you can also copy and paste this link into your browser:</p>
+        <p>{{ confirmation_url }}</p>
+        
+        <p>This confirmation helps us ensure that we have your correct email address and that you actually want to receive our newsletter.</p>
+        
+        <p>If you didn't request this subscription, you can safely ignore this email.</p>
+    </div>
+    
+    <div class="footer">
+        <p>This email was sent to {{ subscriber.email }}. If you have any questions, please contact our support team.</p>
+    </div>
+</body>
+</html>
