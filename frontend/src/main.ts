@@ -1,26 +1,28 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-
 import './styles/main.css'
 import App from './App.vue'
 import router from './router'
-import { useAuthStore } from './stores/auth'
-import { useTenantStore } from './stores/tenant'
 import { registerServiceWorker } from './composables/useServiceWorker'
 
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 
-// Initialize stores
+// Initialize stores after Pinia and router setup
+import { useAuthStore } from './stores/auth'
+import { useTenantStore } from './stores/tenant'
+
 const authStore = useAuthStore()
 const tenantStore = useTenantStore()
-
-authStore.initializeAuth()
-tenantStore.initializeTenant()
 
 // Register service worker
 registerServiceWorker()
 
 app.mount('#app')
+
+// Initialize store data
+authStore.initializeAuth()
+tenantStore.initializeTenant()

@@ -21,8 +21,8 @@
                 class="appearance-none bg-white border border-gray-300 rounded-md px-3 py-1 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Topics</option>
-                <option v-for="topic in topics" :key="topic.id" :value="topic.slug">
-                  {{ topic.name }}
+                <option v-for="topic in (topics || [])" :key="topic?.id" :value="topic?.slug">
+                  {{ topic?.name }}
                 </option>
               </select>
               <ChevronDownIcon class="absolute right-2 top-2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -72,7 +72,7 @@
           v-for="article in articles"
           :key="article.id"
           :title="article.title"
-          :subtitle="`By ${article.author.email} • ${formatDate(article.published_at)}`"
+          :subtitle="`By ${article.author_name} • ${formatDate(article.published_at)}`"
           :content="article.excerpt"
           clickable
           class="h-full"
@@ -117,9 +117,7 @@ interface Article {
   slug: string
   excerpt: string
   published_at: string | null
-  author: {
-    email: string
-  }
+  author_name: string
 }
 
 interface Topic {

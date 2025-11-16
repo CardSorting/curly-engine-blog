@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions, status, filters
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
@@ -43,8 +44,8 @@ class ArticleListView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAccountMember]
-        return [IsAuthenticatedOrReadOnly]
+            return [IsAccountMember()]
+        return [permissions.AllowAny()]
 
 
 class ArticleDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -159,8 +160,8 @@ class TopicListView(generics.ListCreateAPIView):
     
     def get_permissions(self):
         if self.request.method == 'POST':
-            return [IsAccountMember]
-        return [IsAuthenticatedOrReadOnly]
+            return [IsAccountMember()]
+        return [permissions.AllowAny()]
     
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']

@@ -157,8 +157,9 @@ SIMPLE_JWT = {
 # CORS
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:5173'
+    default='http://localhost:3000,http://localhost:5173,http://localhost:8001'
 ).split(',')
+CORS_ALLOW_CREDENTIALS = True
 
 # File Storage
 USE_S3 = config('USE_S3', default=False, cast=bool)

@@ -69,7 +69,8 @@ export function useArticles<T = unknown>() {
   const api = useApi<T>()
 
   const fetchArticles = (params?: ApiParams, accountSlug?: string) => {
-    const url = accountSlug ? `/${accountSlug}/` : '/'
+    // Articles are fetched from the root API endpoint, not account-scoped
+    const url = '/'
     return api.execute(apiClient.get, url, { params })
   }
 
