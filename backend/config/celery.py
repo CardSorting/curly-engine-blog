@@ -13,7 +13,7 @@ from django.utils import timezone
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 # Create the Celery app instance
-app = Celery('chronicle')
+app = Celery('galx')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.

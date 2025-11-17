@@ -1,9 +1,9 @@
-// Service Worker for Chronicle Frontend
+// Service Worker for GALX Frontend
 // Handles caching, offline support, and performance optimizations
 
-const CACHE_NAME = 'chronicle-v1.0.0'
-const STATIC_CACHE = 'chronicle-static-v1.0.0'
-const API_CACHE = 'chronicle-api-v1.0.0'
+const CACHE_NAME = 'galx-v1.0.0'
+const STATIC_CACHE = 'galx-static-v1.0.0'
+const API_CACHE = 'galx-api-v1.0.0'
 
 // Assets to cache on installation
 const STATIC_ASSETS = [
@@ -171,7 +171,7 @@ async function handleNavigationRequest(request) {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Offline - Chronicle</title>
+          <title>Offline - GALX</title>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
         </head>

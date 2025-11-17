@@ -7,7 +7,7 @@
           <div class="flex items-center space-x-8">
             <!-- TechCrunch-style Logo -->
             <router-link to="/" class="text-2xl font-bold text-red-500 hover:text-red-600 transition-colors">
-              Chronicle
+              GALX
             </router-link>
 
             <!-- TechCrunch-style Navigation -->
@@ -553,7 +553,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <router-link to="/" class="text-xl font-bold mb-4 block">Chronicle</router-link>
+            <router-link to="/" class="text-xl font-bold mb-4 block">GALX</router-link>
             <p class="text-gray-400 text-sm">
               A modern multi-tenant blog platform built for writers, journalists, and creators.
             </p>
@@ -595,7 +595,7 @@
         </div>
 
         <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>&copy; 2025 Chronicle. Built with Vue 3 and Django.</p>
+          <p>&copy; 2025 GALX. Built with Vue 3 and Django.</p>
         </div>
       </div>
     </footer>
@@ -672,7 +672,7 @@ const smoothScrollTo = (element: Element, duration: number = 300) => {
 
 // Meta management
 const updateMetaTags = () => {
-  const title = 'Chronicle - Latest Tech News, Analysis & Insights'
+  const title = 'GALX - Latest Tech News, Analysis & Insights'
   const description = 'Get the latest tech news, business analysis, and insights. Discover stories from independent journalists and creators on the forefront of innovation.'
   const url = window.location.origin
   const image = `${url}/og-image.jpg` // Would need to generate this
@@ -688,13 +688,13 @@ const updateMetaTags = () => {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "NewsMediaOrganization",
-    "name": "Chronicle",
+    "name": "GALX",
     "description": description,
     "url": url,
     "logo": `${url}/logo.png`,
     "sameAs": [
-      "https://twitter.com/chronicleapp",
-      "https://linkedin.com/company/chronicle"
+      "https://twitter.com/galxapp",
+      "https://linkedin.com/company/galx"
     ]
   }
 
@@ -702,7 +702,7 @@ const updateMetaTags = () => {
   const metaTags = [
     // Basic SEO
     { name: 'description', content: description },
-    { name: 'author', content: 'Chronicle' },
+    { name: 'author', content: 'GALX' },
     { name: 'robots', content: 'index, follow' },
 
     // Open Graph
@@ -713,14 +713,14 @@ const updateMetaTags = () => {
     { property: 'og:image', content: image },
     { property: 'og:image:width', content: '1200' },
     { property: 'og:image:height', content: '630' },
-    { property: 'og:site_name', content: 'Chronicle' },
+    { property: 'og:site_name', content: 'GALX' },
 
     // Twitter Card
     { name: 'twitter:card', content: 'summary_large_image' },
     { name: 'twitter:title', content: title },
     { name: 'twitter:description', content: description },
     { name: 'twitter:image', content: image },
-    { name: 'twitter:site', content: '@chronicleapp' },
+    { name: 'twitter:site', content: '@galxapp' },
   ]
 
   // Insert meta tags
@@ -827,7 +827,7 @@ const formatViewCount = (count: number): string => {
 const shareOnTwitter = (article: Article) => {
   const url = encodeURIComponent(`${window.location.origin}/article/${article.id}`)
   const text = encodeURIComponent(`Check out: ${article.title}`)
-  const twitterUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}&via=chronicleapp`
+  const twitterUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}&via=galxapp`
   window.open(twitterUrl, '_blank', 'noopener,noreferrer')
 }
 

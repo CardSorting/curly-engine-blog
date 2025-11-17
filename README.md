@@ -1,6 +1,6 @@
-# Chronicle
+# GALX
 
-A **world-class enterprise SAAS editorial platform** for modern content publishing. Chronicle rivals major publishing platforms with Google Docs-style collaborative editing, AI-powered content analysis, multi-tenant architecture, and enterprise-grade security.
+A **world-class enterprise SAAS editorial platform** for modern content publishing. GALX rivals major publishing platforms with Google Docs-style collaborative editing, AI-powered content analysis, multi-tenant architecture, and enterprise-grade security.
 
 [![Django](https://img.shields.io/badge/Django-4.2+-092E20?style=flat&logo=django)](https://djangoproject.com/)
 [![Vue.js](https://img.shields.io/badge/Vue.js-3.0+-4FC08D?style=flat&logo=vue.js)](https://vuejs.org/)
@@ -55,7 +55,7 @@ A **world-class enterprise SAAS editorial platform** for modern content publishi
 ## 🏗️ Architecture Overview
 
 ```
-chronicle/
+galx/
 ├── backend/                          # Django Backend (Python/Django)
 │   ├── apps/
 │   │   ├── accounts/                 # Multi-tenant account management
@@ -103,8 +103,8 @@ chronicle/
 
 1. **Clone and navigate**
    ```bash
-   git clone https://github.com/CardSorting/curly-engine-blog.git chronicle
-   cd chronicle/backend
+   git clone https://github.com/CardSorting/curly-engine-blog.git galx
+   cd galx/backend
    ```
 
 2. **Create virtual environment**
@@ -392,4 +392,4 @@ This project is licensed under the **Apache License 2.0** - see the LICENSE file
 
 ---
 
-**Chronicle** - Enterprise-grade content publishing without compromise. ✨
+**GALX** - Enterprise-grade content publishing without compromise. ✨

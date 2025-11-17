@@ -35,7 +35,7 @@
         </label>
         <div class="mt-1 relative">
           <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span class="text-gray-500 text-sm">chronicle.com/</span>
+            <span class="text-gray-500 text-sm">galx.com/</span>
           </div>
           <Input
             id="accountSlug"
