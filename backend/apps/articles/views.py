@@ -6,11 +6,11 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
-from .models import Article, Topic, Page
+from .models import Article, Topic, Page, Series
 from .serializers import (
     ArticleListSerializer, ArticleDetailSerializer,
     ArticleCreateSerializer, ArticleUpdateSerializer,
-    TopicSerializer, PageSerializer
+    TopicSerializer, PageSerializer, SeriesSerializer
 )
 from apps.accounts.permissions import IsAccountMember, IsArticleAuthorOrEditor, CanPublishArticles
 
@@ -231,3 +231,58 @@ class PageDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PageSerializer
     permission_classes = [IsAccountMember]
     lookup_field = 'slug'
+
+
+class SeriesListView(generics.ListCreateAPIView):
+    """List series and create new series"""
+    serializer_class = SeriesSerializer
+    permission_classes = [IsAccountMember]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'description']
+    ordering_fields = ['created_at', 'updated_at', 'title']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            queryset = Series.objects.filter(account=self.request.tenant)
+        else:
+            queryset = Series.objects.all()
+        return queryset
+
+
+class SeriesDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update, or delete a series"""
+    serializer_class = SeriesSerializer
+    permission_classes = [IsAccountMember]
+
+    def get_queryset(self):
+        # Filter by tenant if available
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            queryset = Series.objects.filter(account=self.request.tenant)
+        else:
+            queryset = Series.objects.all()
+        return queryset
+
+
+class SeriesArticlesView(generics.ListAPIView):
+    """List articles in a specific series (ordered by series_order)"""
+    serializer_class = ArticleListSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status']
+    ordering = ['series_order', '-published_at']
+
+    def get_queryset(self):
+        # Filter by tenant and get series
+        if hasattr(self.request, 'tenant') and self.request.tenant:
+            series = get_object_or_404(Series, id=self.kwargs['pk'], account=self.request.tenant)
+        else:
+            series = get_object_or_404(Series, id=self.kwargs['pk'])
+
+        queryset = series.articles.all()
+
+        # For non-authenticated users, only show published articles
+        if not self.request.user.is_authenticated:
+            queryset = queryset.filter(status='published')
+
+        return queryset.order_by('series_order', '-published_at')

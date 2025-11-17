@@ -20,6 +20,38 @@ from .permissions import (
 )
 
 
+def csrf_failure(request, reason=""):
+    """
+    Custom CSRF failure handler that returns a 403 with JSON response
+    instead of the default HTML page for better API integration
+    """
+    from django.http import JsonResponse
+    from django.middleware.csrf import get_token
+
+    # Log the CSRF failure for security monitoring
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning(f"CSRF failure for {request.path}: {reason}")
+
+    # Return JSON response for API clients
+    if request.headers.get('Content-Type') == 'application/json' or request.path.startswith('/api/'):
+        return JsonResponse({
+            'error': 'CSRF token validation failed',
+            'message': 'Your session may have expired. Please refresh the page and try again.',
+            'csrf_token': get_token(request)
+        }, status=403)
+
+    # Fall back to HTML response for web clients
+    from django.template import loader
+    from django.http import HttpResponseForbidden
+    t = loader.get_template('403_csrf_failure.html')
+    return HttpResponseForbidden(t.render({
+        'reason': reason,
+        'request': request,
+        'csrf_token': get_token(request)
+    }, request))
+
+
 class AccountViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing accounts (blogs/sites)

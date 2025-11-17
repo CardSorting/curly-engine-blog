@@ -14,6 +14,11 @@ urlpatterns = [
     path('topics/<slug:slug>/', views.TopicDetailView.as_view(), name='topic-detail'),
     path('topics/<slug:slug>/articles/', views.TopicArticlesView.as_view(), name='topic-articles'),
 
+    # Series endpoints
+    path('series/', views.SeriesListView.as_view(), name='series-list'),
+    path('series/<uuid:pk>/', views.SeriesDetailView.as_view(), name='series-detail'),
+    path('series/<uuid:pk>/articles/', views.SeriesArticlesView.as_view(), name='series-articles'),
+
     # Pages endpoints
     path('pages/', views.PageListView.as_view(), name='page-list'),
     path('pages/<slug:slug>/', views.PageDetailView.as_view(), name='page-detail'),

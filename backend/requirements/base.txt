@@ -8,7 +8,8 @@ psycopg2-binary==2.9.9          # PostgreSQL adapter
 djangorestframework==3.14.0      # REST framework
 djangorestframework-simplejwt==5.3.1  # JWT authentication
 django-cors-headers==4.3.1       # CORS handling
-django-filter==24.1              # API filtering
+django-csp==3.7                   # Content Security Policy
+django-filter==24.1               # API filtering
 
 # File Storage
 django-storages==1.14.2          # S3 integration
@@ -25,6 +26,11 @@ beautifulsoup4==4.12.2           # HTML parsing for email tracking
 # Content Processing
 markdown==3.5.2                  # Markdown to HTML
 bleach==6.1.0                    # HTML sanitization
+
+# Background Processing & Caching
+celery==5.4.0                    # Task queue for background processing
+redis==5.2.1                     # Redis client for caching/task broker
+psycopg2-binary==2.9.9            # PostgreSQL adapter (also for Celery)
 
 # Utilities
 python-decouple==3.8             # Environment variables

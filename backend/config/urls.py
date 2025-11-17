@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/newsletter/', include('apps.newsletter.urls')),
     path('api/analytics/', include('apps.analytics.urls')),
     path('api/seo/', include('apps.seo.urls')),
+    path('api/content-analysis/', include('apps.content_analysis.urls')),
     path('api/register/', include('apps.users.urls_register')),
 ]
 

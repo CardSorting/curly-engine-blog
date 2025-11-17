@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'csp',
     'django_filters',
     'storages',
     # 'drf_spectacular',  # Commented out for testing
@@ -40,18 +41,23 @@ INSTALLED_APPS = [
     'apps.newsletter',
     'apps.analytics',
     'apps.seo',
+    'apps.content_analysis',  # Content analysis and AI writing suggestions
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # Before CommonMiddleware
+    'csp.middleware.CSPMiddleware',  # Content Security Policy
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
+
+    # Security enhancements
+    'django.middleware.security.SecurityMiddleware',
+
     # SAAS tenant middleware
     'apps.accounts.middleware.TenantMiddleware',
     'apps.accounts.middleware.TenantPermissionMiddleware',
@@ -294,6 +300,90 @@ else:
 # Session configuration
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
+
+# Security Headers - Enterprise-grade CSP and security settings
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_SSL_REDIRECT = not DEBUG  # Only enforce HTTPS in production
+
+# Content Security Policy (CSP) - Enterprise-grade protection
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "'unsafe-inline'",
+    "https://cdn.jsdelivr.net",
+    "https://unpkg.com",
+    "*.googletagmanager.com",
+    "*.google-analytics.com",
+    "*.stripe.com",
+)
+CSP_STYLE_SRC = (
+    "'self'",
+    "'unsafe-inline'",
+    "https://fonts.googleapis.com",
+    "https://cdn.jsdelivr.net",
+    "https://unpkg.com",
+)
+CSP_FONT_SRC = (
+    "'self'",
+    "https://fonts.gstatic.com",
+    "data:",
+)
+CSP_IMG_SRC = (
+    "'self'",
+    "data:",
+    "blob:",
+    "https://*.amazonaws.com",
+    "https://*.cloudflare.com",
+    "*.googletagmanager.com",
+    "*.google-analytics.com",
+    "*.stripe.com",
+)
+CSP_CONNECT_SRC = (
+    "'self'",
+    "https://*.amazonaws.com",
+    "https://api.stripe.com",
+    "https://js.stripe.com",
+    "*.googletagmanager.com",
+    "*.google-analytics.com",
+)
+CSP_FRAME_SRC = (
+    "'self'",
+    "*.stripe.com",
+)
+CSP_OBJECT_SRC = ("'none'",)
+CSP_BASE_URI = ("'self'",)
+CSP_FORM_ACTION = ("'self'", "*.stripe.com")
+CSP_INCLUDE_NONCE_IN = ['script-src']
+
+# CSRF Protection
+CSRF_FAILURE_VIEW = 'apps.accounts.views.csrf_failure'
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = not DEBUG
+
+# Feature Policy / Permissions Policy
+FEATURE_POLICY = {
+    "geolocation": "'none'",
+    "camera": "'none'",
+    "microphone": "'none'",
+    "payment": "'self'",
+    "usb": "'none'",
+}
+
+# Security middleware settings
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Celery Configuration - Enterprise Background Task Processing
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default=config('REDIS_URL', default='redis://localhost:6379/0'))
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default=config('REDIS_URL', default='redis://localhost:6379/0'))
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  # 25 minutes soft limit
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000  # Restart worker after 1000 tasks
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

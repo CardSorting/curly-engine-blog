@@ -81,6 +81,59 @@ class SubscriberFactory(factory.django.DjangoModelFactory):
     is_active = True
     is_confirmed = True
 
+    # Add realistic subscription preferences for A/B testing
+    subscription_source = factory.LazyAttribute(lambda x: fake.random_element(['website', 'newsletter', 'referral', 'social']))
+    tags = factory.LazyAttribute(lambda x: [fake.word() for _ in range(fake.random_int(0, 3))])
+
+
+class MediaItemFactory(factory.django.DjangoModelFactory):
+    """Factory for creating test media items - essential for rich content testing"""
+    class Meta:
+        model = MediaItem
+
+    title = factory.LazyAttribute(lambda x: fake.sentence(nb_words=4)[:-1])
+    file = factory.LazyAttribute(lambda x: f"media/test/{fake.file_name(extension='jpg')}")
+    file_type = factory.LazyAttribute(lambda x: fake.random_element(['image', 'video', 'document']))
+    mime_type = factory.LazyAttribute(lambda x: fake.random_element(['image/jpeg', 'video/mp4', 'application/pdf']))
+    file_size = factory.LazyAttribute(lambda x: fake.random_int(1024, 1024*1024*10))  # 1KB to 10MB
+    uploaded_by = factory.SubFactory(UserFactory)
+
+
+@pytest.fixture
+def media_item():
+    """Create a test media item"""
+    return MediaItemFactory()
+
+
+@pytest.fixture
+def newsletter():
+    """Create a test newsletter"""
+    return Newsletter.objects.create(
+        subject=fake.sentence(nb_words=6)[:-1],
+        content='\n\n'.join(fake.paragraphs(3)),
+        status='draft',
+        sent_at=None
+    )
+
+
+# Test data generators for load testing scenarios
+@pytest.fixture
+def bulk_users():
+    """Create a bulk set of users for performance testing"""
+    return UserFactory.create_batch(50)
+
+
+@pytest.fixture
+def bulk_articles(bulk_users, topic):
+    """Create a bulk set of articles for performance testing"""
+    return ArticleFactory.create_batch(100, topic=topic, author=factory.Iterator(bulk_users))
+
+
+@pytest.fixture
+def bulk_subscribers():
+    """Create a bulk set of subscribers for email testing"""
+    return SubscriberFactory.create_batch(200)
+
 
 @pytest.fixture
 def user():

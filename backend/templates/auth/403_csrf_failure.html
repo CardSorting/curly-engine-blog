@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Session Error - {{ reason|default:"CSRF Token Validation Failed" }}</title>
+    <style>
+        :root {
+            --primary-color: #3B82F6;
+            --error-color: #EF4444;
+            --background-color: #F8FAFC;
+            --card-background: #FFFFFF;
+            --text-color: #1F2937;
+            --border-color: #E5E7EB;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .error-container {
+            max-width: 500px;
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .error-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 24px;
+            background-color: var(--error-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        h1 {
+            margin: 0 0 16px;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--error-color);
+        }
+
+        .error-message {
+            margin: 0 0 24px;
+            color: #6B7280;
+            font-size: 16px;
+        }
+
+        .csrf-details {
+            background: #FEF2F2;
+            border: 1px solid #FEE2E2;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 24px 0;
+            text-align: left;
+            font-size: 14px;
+            color: #7F1D1D;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 32px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563EB;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #F1F5F9;
+            border-color: #CBD5E1;
+        }
+
+        .help-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .help-section h3 {
+            margin: 0 0 8px;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        code {
+            background: #F1F5F9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 13px;
+        }
+
+        @media (max-width: 480px) {
+            .error-container {
+                padding: 24px 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1>Security Error</h1>
+        <p class="error-message">
+            Your request could not be processed due to a security validation error.
+            This usually happens when your session has expired or the request was made from an insecure source.
+        </p>
+
+        <div class="csrf-details">
+            <strong>What happened?</strong><br>
+            CSRF (Cross-Site Request Forgery) token validation failed. This is a security measure to protect your account.
+            {% if reason %}
+            <br><br><strong>Details:</strong> {{ reason }}
+            {% endif %}
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="location.reload()">Refresh Page</button>
+            <a href="/" class="btn btn-secondary">Go to Homepage</a>
+        </div>
+
+        <div class="help-section">
+            <h3>Still having trouble?</h3>
+            <p>
+                Try clearing your browser's cache and cookies, or try accessing the site in an incognito window.
+                If the problem persists, please contact support.
+            </p>
+            <p><small>If you're a developer, check the browser console for additional details.</small></p>
+        </div>
+    </div>
+
+    <script>
+        // Add CSRF token to all forms for future requests
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = document.querySelector('meta[name=csrf-token]');
+            if (csrfToken) {
+                // Set CSRF token for axios/fetch requests
+                if (typeof window.axios !== 'undefined') {
+                    window.axios.defaults.headers.common['X-CSRFToken'] = csrfToken.content;
+                }
+            }
+        });
+
+        // Auto-refresh after 5 seconds if user doesn't interact
+        let refreshTimer = setTimeout(function() {
+            location.reload();
+        }, 5000);
+
+        // Clear timer if user clicks anywhere
+        document.addEventListener('click', function() {
+            clearTimeout(refreshTimer);
+        });
+    </script>
+</body>
+</html>
