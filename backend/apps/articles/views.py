@@ -6,7 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
-from .models import Article, Topic, Page, Series
+from .models import Article, Topic, Page, Series, CollaborativeSession, SessionParticipant
 from .serializers import (
     ArticleListSerializer, ArticleDetailSerializer,
     ArticleCreateSerializer, ArticleUpdateSerializer,

@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'csp',
     'django_filters',
     'storages',
+    'channels',  # WebSocket support
     # 'drf_spectacular',  # Commented out for testing
 
     # Local apps
@@ -83,6 +84,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
 # Database
 import sys
@@ -158,12 +160,44 @@ REST_FRAMEWORK = {
     # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Commented out for testing
 }
 
-# JWT Settings
+# JWT Settings - Enhanced Security Configuration
 from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+
+    # Enhanced security settings
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    #'ISSUER': SITE_URL,  # Commented out to fix import order
+    'JSON_ENCODER': None,
+
+    # Token security features
+    'JWK_URL': None,
+    'LEEWAY': 0,
+
+    # Authentication rules
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+
+    # Token claims
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    # Additional security
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
+
+    # Sliding token settings (optional but more secure)
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(hours=24),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
 }
 
 # CORS
@@ -279,6 +313,7 @@ if CACHE_BACKEND.startswith('redis://') or CACHE_BACKEND.startswith('rediss://')
             'LOCATION': CACHE_BACKEND,
             'OPTIONS': {
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'IGNORE_EXCEPTIONS': True if not DEBUG else False,
             }
         }
     }
@@ -310,10 +345,20 @@ SECURE_HSTS_PRELOAD = True
 SECURE_SSL_REDIRECT = not DEBUG  # Only enforce HTTPS in production
 
 # Content Security Policy (CSP) - Enterprise-grade protection
+# Enhanced CSP policies for comprehensive XSS protection
 CSP_DEFAULT_SRC = ("'self'",)
 CSP_SCRIPT_SRC = (
     "'self'",
-    "'unsafe-inline'",
+    "'strict-dynamic'",  # Allow scripts with valid nonces
+    "https://cdn.jsdelivr.net",
+    "https://unpkg.com",
+    "*.googletagmanager.com",
+    "*.google-analytics.com",
+    "*.stripe.com",
+)
+CSP_SCRIPT_SRC_ELEM = (
+    "'self'",
+    "'unsafe-inline'",  # For inline scripts with nonces
     "https://cdn.jsdelivr.net",
     "https://unpkg.com",
     "*.googletagmanager.com",
@@ -321,6 +366,13 @@ CSP_SCRIPT_SRC = (
     "*.stripe.com",
 )
 CSP_STYLE_SRC = (
+    "'self'",
+    "'unsafe-inline'",  # Allow inline styles for dynamic content
+    "https://fonts.googleapis.com",
+    "https://cdn.jsdelivr.net",
+    "https://unpkg.com",
+)
+CSP_STYLE_SRC_ELEM = (
     "'self'",
     "'unsafe-inline'",
     "https://fonts.googleapis.com",
@@ -341,6 +393,7 @@ CSP_IMG_SRC = (
     "*.googletagmanager.com",
     "*.google-analytics.com",
     "*.stripe.com",
+    "*.gravatar.com",  # For user avatars
 )
 CSP_CONNECT_SRC = (
     "'self'",
@@ -349,6 +402,7 @@ CSP_CONNECT_SRC = (
     "https://js.stripe.com",
     "*.googletagmanager.com",
     "*.google-analytics.com",
+    "https://api.resend.com",  # Email service
 )
 CSP_FRAME_SRC = (
     "'self'",
@@ -357,7 +411,17 @@ CSP_FRAME_SRC = (
 CSP_OBJECT_SRC = ("'none'",)
 CSP_BASE_URI = ("'self'",)
 CSP_FORM_ACTION = ("'self'", "*.stripe.com")
-CSP_INCLUDE_NONCE_IN = ['script-src']
+CSP_INCLUDE_NONCE_IN = ['script-src', 'style-src']
+
+# Additional CSP directives for enhanced security
+CSP_WORKER_SRC = ("'self'",)  # For service workers
+CSP_MANIFEST_SRC = ("'self'",)
+CSP_MEDIA_SRC = ("'self'", "data:")
+CSP_CHILD_SRC = ("'self'",)  # For web workers
+
+# Frame ancestors for clickjacking protection (more restrictive than X-Frame-Options)
+CSP_FRAME_ANCESTORS = ("'self'",)
+CSP_UPGRADE_INSECURE_REQUESTS = True if not DEBUG else False
 
 # CSRF Protection
 CSRF_FAILURE_VIEW = 'apps.accounts.views.csrf_failure'
@@ -387,3 +451,17 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000  # Restart worker after 1000 tasks
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Channels Configuration - WebSocket Support for Collaborative Editing
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [config('REDIS_URL', default='redis://localhost:6379/1')],
+            'capacity': 1000,  # Number of messages that can be stored
+            'expiry': 60,  # Message expiry in seconds
+            'group_expiry': 86400,  # Group expiry in seconds (24 hours)
+            'capacity': 2000,  # Increased capacity for collaborative sessions
+        },
+    },
+}

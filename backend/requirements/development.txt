@@ -10,10 +10,21 @@ factory-boy==3.3.0               # Test fixtures
 black==24.2.0                    # Code formatting
 flake8==7.0.0                    # Linting
 isort==5.13.2                    # Import sorting
+bandit==1.7.7                    # Security vulnerability scanning
+safety>=2.4.0                    # Dependency vulnerability scanning (updated)
+radon==5.1.0                     # Code complexity analysis
+xenon==0.9.1                     # Strict complexity checking
+mypy==1.9.0                      # Static type checking
+pre-commit==3.7.1                # Git hooks framework
+
+# Load Testing
+locust==2.24.1                   # Load testing framework
 
 # Development Tools
 django-extensions==3.2.3         # Management commands
+django-debug-toolbar==4.4.2      # Debug toolbar
 ipython==8.22.1                  # Better shell
+werkzeug==3.0.1                  # WSGI utility
 
 # API Documentation
 drf-spectacular==0.27.2          # OpenAPI/Swagger documentation

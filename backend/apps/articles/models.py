@@ -1,6 +1,9 @@
 from django.db import models
 from django.utils.text import slugify
 import uuid
+import json
+from datetime import timedelta
+from django.utils import timezone
 
 
 class ContentTemplate(models.Model):
@@ -1132,6 +1135,476 @@ class ArticleAnnotation(models.Model):
 
     def __str__(self):
         return f"Annotation by {self.user.username} on {self.article.title}"
+
+
+class CollaborativeSession(models.Model):
+    """
+    Manages collaborative editing sessions for articles
+    Tracks multiple users editing simultaneously with real-time synchronization
+    """
+    SESSION_STATUS = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('completed', 'Completed'),
+        ('locked', 'Locked'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # Session relationship
+    article = models.OneToOneField(Article, on_delete=models.CASCADE, related_name='collaborative_session')
+
+    # Session metadata
+    status = models.CharField(max_length=20, choices=SESSION_STATUS, default='active')
+    session_name = models.CharField(max_length=200, blank=True, help_text="Optional session name for group collaboration")
+
+    # Participants tracking
+    participants = models.ManyToManyField('users.User', through='SessionParticipant', related_name='collaborative_sessions')
+
+    # Document state
+    current_content = models.TextField(blank=True, help_text="Current collaborative content state")
+    current_title = models.CharField(max_length=200, blank=True, help_text="Current collaborative title")
+    base_version = models.IntegerField(default=0, help_text="Article version this session started from")
+
+    # Operation tracking
+    operations = models.JSONField(default=list, blank=True, help_text="List of operational transforms applied")
+    operation_sequence = models.PositiveIntegerField(default=0, help_text="Sequential counter for operations")
+
+    # Session settings
+    allow_anonymous = models.BooleanField(default=False, help_text="Allow anonymous contributors")
+    max_participants = models.PositiveIntegerField(default=10, help_text="Maximum number of participants")
+    auto_save_interval = models.PositiveIntegerField(default=30, help_text="Auto-save interval in seconds")
+
+    # Session management
+    is_locked = models.BooleanField(default=False, help_text="Lock session to prevent new joins")
+    locked_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='locked_sessions')
+
+    # Session creator
+    created_by = models.ForeignKey('users.User', on_delete=models.SET_NULL, null=True, related_name='created_sessions')
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField(null=True, blank=True, help_text="Session expiration time")
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['status', 'last_activity']),
+            models.Index(fields=['article', 'status']),
+            models.Index(fields=['expires_at']),
+        ]
+
+    def __str__(self):
+        return f"Session for {self.article.title} ({self.get_status_display()})"
+
+    def is_expired(self):
+        """Check if session has expired"""
+        if not self.expires_at:
+            return False
+        return timezone.now() > self.expires_at
+
+    def is_active(self):
+        """Check if session is currently active"""
+        return (
+            self.status == 'active' and
+            not self.is_expired() and
+            not self.is_locked
+        )
+
+    def add_participant(self, user):
+        """Add a participant to the session"""
+        if self.participants.count() >= self.max_participants:
+            raise ValueError("Session is full")
+
+        participant, created = SessionParticipant.objects.get_or_create(
+            session=self,
+            user=user,
+            defaults={'joined_at': timezone.now()}
+        )
+
+        if not created:
+            # Update last activity
+            participant.last_activity = timezone.now()
+            participant.save()
+
+        return participant
+
+    def remove_participant(self, user):
+        """Remove a participant from the session"""
+        SessionParticipant.objects.filter(session=self, user=user).delete()
+
+    def get_active_participants(self):
+        """Get currently active participants"""
+        cutoff_time = timezone.now() - timedelta(minutes=5)  # Consider inactive after 5 minutes
+        return self.participants.filter(
+            sessionparticipant__last_activity__gte=cutoff_time
+        )
+
+    def apply_operation(self, operation, user, sequence_number=None):
+        """Apply an operational transform"""
+        if sequence_number is None:
+            sequence_number = self.operation_sequence + 1
+
+        # Validate sequence number
+        if sequence_number != self.operation_sequence + 1:
+            raise ValueError(f"Invalid sequence number. Expected {self.operation_sequence + 1}, got {sequence_number}")
+
+        # Apply the operation to current content
+        self.current_content = self._apply_operation_to_content(operation, self.current_content)
+        self.current_title = self._apply_operation_to_title(operation, self.current_title)
+
+        # Store the operation
+        operation_data = {
+            'sequence': sequence_number,
+            'user_id': str(user.id),
+            'user_name': user.get_full_name() or user.username,
+            'operation': operation,
+            'applied_at': timezone.now().isoformat()
+        }
+
+        self.operations.append(operation_data)
+        self.operation_sequence = sequence_number
+        self.save()
+
+        return operation_data
+
+    def _apply_operation_to_content(self, operation, content):
+        """Apply operation to content using OT principles"""
+        op_type = operation.get('type')
+        position = operation.get('position', 0)
+
+        if op_type == 'insert':
+            text = operation.get('text', '')
+            return content[:position] + text + content[position:]
+        elif op_type == 'delete':
+            length = operation.get('length', 0)
+            return content[:position] + content[position + length:]
+        elif op_type == 'replace':
+            old_text = operation.get('old_text', '')
+            new_text = operation.get('new_text', '')
+            # Simple text replacement
+            return content.replace(old_text, new_text, 1) if old_text in content else content
+
+        return content
+
+    def _apply_operation_to_title(self, operation, title):
+        """Apply operation to title (subset of content operations)"""
+        op_type = operation.get('type')
+
+        # Only allow insert/delete operations on title
+        if op_type in ['insert', 'delete']:
+            return self._apply_operation_to_content(operation, title)
+
+        return title
+
+    def save_to_article(self, user=None, create_version=True):
+        """Save current collaborative state back to the article"""
+        self.article.title = self.current_title or self.article.title
+        self.article.content = self.current_content or self.article.content
+        self.article.updated_at = timezone.now()
+
+        if create_version:
+            self.article._create_version = True
+            self.article._version_user = user
+            self.article._version_summary = f"Collaborative edit from session {self.id}"
+
+        self.article.save()
+
+        # Mark session as completed
+        self.status = 'completed'
+        self.save()
+
+        return self.article
+
+    def get_operations_since(self, sequence_number):
+        """Get operations since a given sequence number"""
+        return [op for op in self.operations if op['sequence'] > sequence_number]
+
+    def can_join(self, user):
+        """Check if a user can join this session"""
+        if self.status != 'active':
+            return False
+
+        if self.is_expired() or self.is_locked:
+            return False
+
+        if self.participants.count() >= self.max_participants:
+            return False
+
+        # Check user permissions
+        return self.article.can_be_edited_by(user)
+
+    @classmethod
+    def create_session(cls, article, created_by, session_name="", expires_hours=24):
+        """Create a new collaborative session for an article"""
+        expires_at = timezone.now() + timedelta(hours=expires_hours) if expires_hours else None
+
+        session = cls.objects.create(
+            article=article,
+            session_name=session_name or f"Collaborative editing: {article.title}",
+            current_content=article.content,
+            current_title=article.title,
+            base_version=article.versions.count(),
+            created_by=created_by,
+            expires_at=expires_at
+        )
+
+        # Add creator as first participant
+        session.add_participant(created_by)
+
+        return session
+
+    @classmethod
+    def cleanup_expired_sessions(cls):
+        """Clean up expired or inactive sessions"""
+        cutoff_time = timezone.now() - timedelta(hours=1)  # Sessions inactive > 1 hour
+
+        # Mark expired sessions as inactive
+        expired_sessions = cls.objects.filter(
+            models.Q(expires_at__lt=timezone.now()) |
+            models.Q(last_activity__lt=cutoff_time),
+            status='active'
+        )
+
+        expired_sessions.update(status='inactive')
+
+        return expired_sessions.count()
+
+
+class SessionParticipant(models.Model):
+    """
+    Tracks participants in collaborative editing sessions
+    """
+    USER_STATUS = [
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+        ('disconnected', 'Disconnected'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    session = models.ForeignKey(CollaborativeSession, on_delete=models.CASCADE)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+
+    # Participation tracking
+    joined_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=20, choices=USER_STATUS, default='active')
+
+    # User position/cursor tracking
+    cursor_position = models.IntegerField(default=0, help_text="Current cursor position in document")
+    selection_start = models.IntegerField(default=0)
+    selection_end = models.IntegerField(default=0)
+
+    # User's color for UI highlighting
+    user_color = models.CharField(max_length=7, default='#0066FF', help_text="Hex color for user identification")
+
+    class Meta:
+        unique_together = [['session', 'user']]
+        indexes = [
+            models.Index(fields=['session', 'status']),
+            models.Index(fields=['user', 'last_activity']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} in session {self.session.id}"
+
+    def update_activity(self):
+        """Update last activity timestamp"""
+        self.last_activity = timezone.now()
+        self.save(update_fields=['last_activity'])
+
+    def update_cursor(self, position, selection_start=0, selection_end=0):
+        """Update user's cursor position"""
+        self.cursor_position = position
+        self.selection_start = selection_start
+        self.selection_end = selection_end
+        self.update_activity()
+
+    def disconnect(self):
+        """Mark user as disconnected"""
+        self.status = 'disconnected'
+        self.save()
+
+    @property
+    def is_active(self):
+        """Check if participant is currently active"""
+        cutoff_time = timezone.now() - timedelta(minutes=5)
+        return self.status == 'active' and self.last_activity >= cutoff_time
+
+
+class OperationTransform(models.Model):
+    """
+    Stores operational transforms for collaborative editing history
+    Advanced conflict resolution using Operational Transformation (OT)
+    """
+    OPERATION_TYPES = [
+        ('insert', 'Insert Text'),
+        ('delete', 'Delete Text'),
+        ('replace', 'Replace Text'),
+        ('format', 'Format Change'),
+        ('undo', 'Undo Operation'),
+        ('redo', 'Redo Operation'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    session = models.ForeignKey(CollaborativeSession, on_delete=models.CASCADE, related_name='operation_history')
+
+    # Operation metadata
+    sequence_number = models.PositiveIntegerField(help_text="Sequential operation number")
+    operation_type = models.CharField(max_length=20, choices=OPERATION_TYPES)
+
+    # User information
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='collaborative_operations')
+
+    # Operation data
+    operation_data = models.JSONField(help_text="Complete operation details")
+
+    # State before operation (for undo/redo)
+    previous_state = models.JSONField(default=dict, blank=True, help_text="Document state before this operation")
+
+    # Conflict resolution
+    conflicts_resolved = models.JSONField(default=list, blank=True, help_text="List of conflicts that were resolved")
+    parent_operations = models.JSONField(default=list, blank=True, help_text="Operations this one depends on")
+
+    # Metadata
+    timestamp = models.DateTimeField(auto_now_add=True)
+    client_id = models.CharField(max_length=100, blank=True, help_text="Client identifier for conflict resolution")
+
+    class Meta:
+        ordering = ['session', 'sequence_number']
+        unique_together = [['session', 'sequence_number']]
+        indexes = [
+            models.Index(fields=['session', 'sequence_number']),
+            models.Index(fields=['user', 'timestamp']),
+            models.Index(fields=['client_id']),
+        ]
+
+    def __str__(self):
+        return f"Op {self.sequence_number} by {self.user.username} in {self.session.article.title}"
+
+    def transform_against(self, other_operation):
+        """
+        Transform this operation against another concurrent operation
+        Implements basic Operational Transformation principles
+        """
+        # Basic OT transformation logic
+        if self.operation_type == 'insert' and other_operation.operation_type == 'insert':
+            return self._transform_insert_insert(other_operation)
+        elif self.operation_type == 'insert' and other_operation.operation_type == 'delete':
+            return self._transform_insert_delete(other_operation)
+        elif self.operation_type == 'delete' and other_operation.operation_type == 'insert':
+            return self._transform_delete_insert(other_operation)
+        elif self.operation_type == 'delete' and other_operation.operation_type == 'delete':
+            return self._transform_delete_delete(other_operation)
+
+        # For other cases, return self unchanged (simplified OT)
+        return self
+
+    def _transform_insert_insert(self, other):
+        """Transform insert operation against another insert"""
+        my_pos = self.operation_data.get('position', 0)
+        other_pos = other.operation_data.get('position', 0)
+
+        if my_pos <= other_pos:
+            # Other insert comes after mine, no change needed
+            return self
+        else:
+            # Other insert comes before mine, adjust my position
+            other_length = len(other.operation_data.get('text', ''))
+            self.operation_data['position'] = my_pos + other_length
+            return self
+
+    def _transform_insert_delete(self, other):
+        """Transform insert operation against delete"""
+        my_pos = self.operation_data.get('position', 0)
+        other_pos = other.operation_data.get('position', 0)
+        other_length = other.operation_data.get('length', 0)
+
+        if my_pos <= other_pos:
+            # Insert before delete, no change needed
+            return self
+        elif my_pos < other_pos + other_length:
+            # Insert within deleted range, adjust position to before delete
+            self.operation_data['position'] = other_pos
+            return self
+        else:
+            # Insert after delete, adjust position
+            self.operation_data['position'] = my_pos - other_length
+            return self
+
+    def _transform_delete_insert(self, other):
+        """Transform delete operation against insert"""
+        my_pos = self.operation_data.get('position', 0)
+        my_length = self.operation_data.get('length', 0)
+        other_pos = other.operation_data.get('position', 0)
+        other_length = len(other.operation_data.get('text', ''))
+
+        if other_pos <= my_pos:
+            # Insert before delete, adjust delete position
+            self.operation_data['position'] = my_pos + other_length
+            return self
+        elif other_pos < my_pos + my_length:
+            # Insert within delete range, split delete or adjust
+            self.operation_data['length'] = my_length + other_length
+            return self
+        else:
+            # Insert after delete, no change needed
+            return self
+
+    def _transform_delete_delete(self, other):
+        """Transform delete operation against another delete"""
+        my_pos = self.operation_data.get('position', 0)
+        my_length = self.operation_data.get('length', 0)
+        other_pos = other.operation_data.get('position', 0)
+        other_length = other.operation_data.get('length', 0)
+
+        # Complex overlapping delete transformation
+        # Simplified: adjust positions based on overlap
+        my_end = my_pos + my_length
+        other_end = other_pos + other_length
+
+        if my_pos < other_pos:
+            if my_end <= other_pos:
+                # No overlap, other delete after mine
+                return self
+            else:
+                # Overlap: extend my delete to include other's range
+                self.operation_data['length'] = max(my_end, other_end) - my_pos
+                return self
+        else:
+            if other_end <= my_pos:
+                # No overlap, other delete before mine
+                self.operation_data['position'] = max(0, my_pos - other_length)
+                return self
+            else:
+                # Overlap: adjust my position and possibly length
+                self.operation_data['position'] = other_pos
+                self.operation_data['length'] = max(my_end, other_end) - other_pos
+                return self
+
+    @classmethod
+    def create_operation(cls, session, user, operation_type, operation_data, client_id="", parent_operation_ids=None):
+        """Create a new operation with proper sequencing"""
+        sequence_number = session.operation_sequence + 1
+
+        operation = cls.objects.create(
+            session=session,
+            sequence_number=sequence_number,
+            operation_type=operation_type,
+            user=user,
+            operation_data=operation_data,
+            client_id=client_id,
+            parent_operations=parent_operation_ids or []
+        )
+
+        # Update session sequence
+        session.operation_sequence = sequence_number
+        session.save(update_fields=['operation_sequence'])
+
+        return operation
 
 
 class BreakingNews(models.Model):

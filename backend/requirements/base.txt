@@ -32,6 +32,11 @@ celery==5.4.0                    # Task queue for background processing
 redis==5.2.1                     # Redis client for caching/task broker
 psycopg2-binary==2.9.9            # PostgreSQL adapter (also for Celery)
 
+# Real-time Communication
+channels==4.1.0                  # WebSocket support for Django
+channels-redis==4.2.0            # Redis channel layer for Channels
+daphne==4.1.0                    # ASGI server for Django Channels
+
 # Utilities
 python-decouple==3.8             # Environment variables
 python-slugify==8.0.4            # Slug generation
